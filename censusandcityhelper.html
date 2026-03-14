@@ -58,6 +58,8 @@
 
   .table-wrap { max-width: 820px; margin: 0 auto; }
 
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
   table {
     width: 100%;
     border-collapse: collapse;
@@ -74,13 +76,14 @@
 
   th {
     font-family: 'Cinzel', serif;
-    font-size: 11px;
-    letter-spacing: .2em;
+    font-size: 10px;
+    letter-spacing: .15em;
     text-transform: uppercase;
     color: var(--gold-dim);
-    padding: 14px 20px;
+    padding: 12px 10px;
     text-align: left;
     font-weight: 600;
+    white-space: nowrap;
   }
   th:nth-child(2), th:nth-child(3) { text-align: center; }
   th:nth-child(4) { text-align: right; }
@@ -93,7 +96,7 @@
   tbody tr:hover { background: rgba(180,150,80,.08); }
   tbody tr.updated { background: rgba(58,106,48,.12); }
 
-  td { padding: 14px 20px; font-weight: 300; color: var(--text); }
+  td { padding: 10px; font-weight: 300; color: var(--text); }
 
   td.civ-name {
     font-family: 'Cinzel', serif;
@@ -113,16 +116,16 @@
   td.action  { text-align: right; }
 
   .census-input {
-    width: 80px;
+    width: 64px;
     background: #fff;
     border: 1px solid var(--border);
     border-radius: 3px;
     color: var(--text);
     font-family: 'Cinzel', serif;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     text-align: center;
-    padding: 8px;
+    padding: 6px;
     outline: none;
     transition: border-color .15s;
   }
@@ -232,7 +235,7 @@
     <a href="index.html" class="back-link">← Phase Order</a>
   </div>
 
-  <table id="active-table">
+  <div class="table-scroll"><table id="active-table">
     <thead>
       <tr>
         <th>Civ</th>
@@ -308,6 +311,7 @@
       </tr>
     </tbody>
   </table>
+</div><!-- /.table-scroll -->
 
   <div class="reset-wrap">
     <button class="reset-btn" id="sort-census-btn" disabled onclick="sortTable()">Sort by Census ↑</button>
@@ -315,6 +319,7 @@
 
   <!-- Cities table -->
   <div style="margin-top:36px;">
+    <div class="table-scroll">
     <table id="cities-table">
       <thead>
         <tr>
@@ -381,6 +386,7 @@
         </tr>
       </tbody>
     </table>
+    </div><!-- /.table-scroll -->
     <div class="reset-wrap">
       <button class="reset-btn" id="sort-cities-btn" disabled onclick="sortCityTable()">Sort by Cities ↑</button>
     </div>
@@ -389,6 +395,7 @@
   <!-- Single shared not-in-game table -->
   <div class="removed-section" id="removed-section">
     <p class="section-label">Not in game</p>
+    <div class="table-scroll">
     <table>
       <thead>
         <tr>
@@ -399,6 +406,7 @@
       </thead>
       <tbody id="removed-tbody"></tbody>
     </table>
+    </div><!-- /.table-scroll -->
   </div>
 
 </div>
