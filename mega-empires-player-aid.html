@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Civilization – Phase Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #1a1610;
+    --surface:   #231f18;
+    --border:    #4a3f2a;
+    --gold:      #c9a84c;
+    --gold-dim:  #7a6130;
+    --amber:     #e8c06a;
+    --text:      #e8dfc8;
+    --muted:     #a09070;
+    --red:       #c0402a;
+    --green:     #4a7c52;
+    --blue:      #3a6080;
+    --phase-w:   56px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.55;
+    min-height: 100vh;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    margin-bottom: 52px;
+  }
+  header .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(26px, 5vw, 46px);
+    font-weight: 700;
+    color: var(--amber);
+    letter-spacing: .06em;
+    line-height: 1.1;
+  }
+  header .rule {
+    width: 160px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 18px auto 0;
+  }
+
+  /* ── Layout ── */
+  .phases {
+    max-width: 820px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* ── Phase card ── */
+  .phase {
+    display: grid;
+    grid-template-columns: var(--phase-w) 1fr;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--surface);
+    transition: border-color .2s;
+  }
+  .phase:hover { border-color: var(--gold-dim); }
+
+  /* Number column */
+  .phase-num {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 18px;
+    font-family: 'Cinzel', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold-dim);
+    background: rgba(0,0,0,.25);
+    border-right: 1px solid var(--border);
+    letter-spacing: .02em;
+    user-select: none;
+  }
+
+  /* Content column */
+  .phase-body {
+    padding: 16px 22px 18px;
+  }
+  .phase-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .phase-title {
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--amber);
+    letter-spacing: .04em;
+  }
+  .badge {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--muted);
+    padding-left: 2px;
+  }
+  .badge.simultaneous { color: #7aaa84; }
+  .badge.census       { color: #6a9aba; }
+  .badge.ast          { color: #6a9aba; }
+
+  /* Rules list */
+  .rules {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .rules li {
+    padding-left: 18px;
+    position: relative;
+    color: var(--text);
+    font-weight: 300;
+  }
+  .rules li::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    color: var(--gold-dim);
+    font-size: 20px;
+    line-height: 1.1;
+  }
+
+  /* Sub-rules (indented) */
+  .rules .sub {
+    margin-top: 3px;
+    padding-left: 34px;
+    color: var(--text);
+    font-size: 15px;
+  }
+  .rules .sub::before { left: 20px; }
+
+  /* Callouts */
+  .callout {
+    margin-top: 10px;
+    padding: 9px 14px;
+    border-left: 3px solid var(--gold-dim);
+    background: rgba(201,168,76,.06);
+    border-radius: 0 3px 3px 0;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--muted);
+  }
+
+  em.key {
+    font-style: normal;
+    font-weight: 600;
+    color: var(--amber);
+  }
+
+  em.warn {
+    font-style: normal;
+    font-weight: 600;
+    color: #d07050;
+  }
+
+  /* Divider between groups */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim) 30%, var(--gold-dim) 70%, transparent);
+    margin: 18px 0 12px;
+    opacity: .4;
+  }
+
+  /* ── Advance buttons ── */
+  .adv-btn {
+    display: inline-block;
+    margin-top: 8px;
+    margin-right: 6px;
+    padding: 8px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .1em;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background .15s, border-color .15s, opacity .15s;
+  }
+  .adv-btn:first-of-type { margin-top: 12px; }
+
+  .adv-btn.green  { background:#2a5c32; color:#d4f0d8; border-color:#4a8c54; }
+  .adv-btn.green:hover  { background:#3a7c42; border-color:#6aac74; }
+
+  .adv-btn.red    { background:#9b2a1a; color:#f5e6d8; border-color:#c0402a; }
+  .adv-btn.red:hover    { background:#c0402a; border-color:#d9604a; }
+
+  .adv-btn.blue   { background:#1e4a6a; color:#cce4f5; border-color:#3a7aaa; }
+  .adv-btn.blue:hover   { background:#2a6a9a; border-color:#5a9aca; }
+
+  .adv-btn.orange { background:#8a4500; color:#fff0d8; border-color:#b05a00; }
+  .adv-btn.orange:hover { background:#b05a00; border-color:#d07010; }
+
+  .adv-btn.gold   { background:#7a6010; color:#f5e6b0; border-color:#aa9030; }
+  .adv-btn.gold:hover   { background:#aa9030; border-color:#d4b840; }
+
+  .adv-btn.multi-blue-red    { background:linear-gradient(90deg,#1e4a6a 40%,#9b2a1a 60%); color:#fff; border-color:#6a3a40; }
+  .adv-btn.multi-blue-red:hover    { opacity:.85; }
+  .adv-btn.multi-blue-green  { background:linear-gradient(90deg,#1e4a6a 40%,#2a5c32 60%); color:#fff; border-color:#2a506a; }
+  .adv-btn.multi-blue-green:hover  { opacity:.85; }
+  .adv-btn.multi-gold-blue   { background:linear-gradient(90deg,#1e4a6a 40%,#7a6010 60%); color:#fff; border-color:#4a5840; }
+  .adv-btn.multi-gold-blue:hover   { opacity:.85; }
+  .adv-btn.multi-gold-green  { background:linear-gradient(90deg,#7a6010 40%,#2a5c32 60%); color:#fff; border-color:#506820; }
+  .adv-btn.multi-gold-green:hover  { opacity:.85; }
+  .adv-btn.multi-orange-green { background:linear-gradient(90deg,#8a4500 40%,#2a5c32 60%); color:#fff; border-color:#6a7040; }
+  .adv-btn.multi-orange-green:hover { opacity:.85; }
+  .adv-btn.multi-orange-gold  { background:linear-gradient(90deg,#8a4500 40%,#7a6010 60%); color:#fff; border-color:#9a6820; }
+  .adv-btn.multi-orange-gold:hover  { opacity:.85; }
+  .adv-btn.multi-red-gold     { background:linear-gradient(90deg,#9b2a1a 40%,#7a6010 60%); color:#fff; border-color:#8a5020; }
+  .adv-btn.multi-red-gold:hover     { opacity:.85; }
+  .adv-btn.multi-blue-orange  { background:linear-gradient(90deg,#1e4a6a 40%,#8a4500 60%); color:#fff; border-color:#4a5040; }
+  .adv-btn.multi-blue-orange:hover  { opacity:.85; }
+  .adv-btn.multi-red-green    { background:linear-gradient(90deg,#9b2a1a 40%,#2a5c32 60%); color:#fff; border-color:#5a3a2a; }
+  .adv-btn.multi-red-green:hover    { opacity:.85; }
+
+  /* ── Modal overlay ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.80);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    cursor: pointer;
+  }
+
+  .modal-overlay img {
+    max-width: min(640px, 100%);
+    max-height: 90vh;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Quick Reference</p>
+  <h1>Phase Order</h1>
+  <div class="rule"></div>
+</header>
+
+<div class="phases">
+
+  <!-- Phase 1 -->
+  <div class="phase">
+    <div class="phase-num">1</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Tax Collection</span>
+        <span class="badge simultaneous">Simultaneous</span>
+      </div>
+      <ul class="rules">
+        <li><em class="key">2 tokens</em> per city from stock to treasury.</li>
+      </ul>
+      <button class="adv-btn green"  onclick="openModal('coinage-modal')">Coinage</button>
+      <button class="adv-btn red"    onclick="openModal('democracy-modal')">Democracy</button>
+      <button class="adv-btn red"    onclick="openModal('monarchy-modal')">Monarchy</button>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase">
+    <div class="phase-num">2</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Population Expansion</span>
+        <span class="badge simultaneous">Simultaneous</span>
+      </div>
+      <ul class="rules">
+        <li><em class="key">+1 token</em> in areas with <em class="key">1 token</em> <span style="color:var(--text)">(white side up as reminder action has already been taken)</span>.</li>
+        <li><em class="key">+2 tokens</em> in areas with <em class="key">2 or more tokens</em>.</li>
+        <li class="sub callout" style="list-style:none; padding-left:12px; margin-left:0">
+          <em class="warn">Doubling is coincidence, not the rule.</em> Example: +2 tokens in an area with 50 tokens.
+        </li>
+        <li>Take census.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase">
+    <div class="phase-num">3</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Movement</span>
+        <span class="badge census">Census Order</span>
+      </div>
+      <ul class="rules">
+        <li>Tokens: <em class="key">1 area by land</em> or <em class="key">into a ship</em> (and disembark later).</li>
+        <li><em class="key">Maintain or buy boats</em> at any time during your turn with 1 or 2 tokens from treasury or board.</li>
+        <li>A boat holds <em class="key">5 tokens</em> and moves <em class="key">4 spaces</em>.</li>
+      </ul>
+      <button class="adv-btn green"  onclick="openModal('astronavigation-modal')">Astronavigation</button>
+      <button class="adv-btn orange" onclick="openModal('cloth-making-modal')">Cloth Making</button>
+      <button class="adv-btn blue"   onclick="openModal('cultural-ascendancy-modal')">Cultural Ascendancy</button>
+      <button class="adv-btn blue"   onclick="openModal('diplomacy-modal')">Diplomacy</button>
+      <button class="adv-btn red"    onclick="openModal('military-modal')">Military</button>
+      <button class="adv-btn red"    onclick="openModal('public-works-modal')">Public Works</button>
+      <button class="adv-btn orange" onclick="openModal('roadbuilding-modal')">Roadbuilding</button>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase">
+    <div class="phase-num">4</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Conflict</span>
+        <span class="badge simultaneous">Simultaneous</span>
+      </div>
+      <ul class="rules">
+        <li><em class="key">Token Conflict</em>: 2+ players in an area exceeding the population limit.</li>
+        <li class="sub" style="color: var(--text);">Resolve by rounds of token removal, starting with the player with the fewest tokens (ties remove simultaneously).</li>
+        <li><em class="key">City Conflict</em>: a player has tokens in an area containing another player's city.</li>
+        <li class="sub">If attacker has <em class="key">7 or more tokens</em>: city converts to 6 tokens, then resolve token conflict. Otherwise nothing happens this phase.</li>
+        <li><em class="warn">Resolve token conflicts first, then city conflicts.</em></li>
+      </ul>
+      <button class="adv-btn red"          onclick="openModal('adv-mil-modal')">Advanced Military</button>
+      <button class="adv-btn multi-orange-green" onclick="openModal('engineering-modal')">Engineering</button>
+      <button class="adv-btn orange"       onclick="openModal('metalworking-modal')">Metalworking</button>
+      <button class="adv-btn red"          onclick="openModal('naval-warfare-modal')">Naval Warfare</button>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div class="phase">
+    <div class="phase-num">5</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">City Construction</span>
+        <span class="badge simultaneous">Simultaneous</span>
+      </div>
+      <ul class="rules">
+        <li>Convert <em class="key">6 tokens on a city site</em> into a city, or <em class="key">12 tokens on a non-city site</em> into a city.</li>
+        <li>Remove surplus population.</li>
+        <li>Check <em class="key">city support</em>: you must have 2 population per city. If not, reduce cities until you do, cities built this turn must be reduced first.</li>
+      </ul>
+      <button class="adv-btn orange" onclick="openModal('agriculture-modal')">Agriculture</button>
+      <button class="adv-btn blue"   onclick="openModal('architecture-modal')">Architecture</button>
+      <button class="adv-btn red"    onclick="openModal('urbanism-modal')">Urbanism</button>
+    </div>
+  </div>
+
+  <!-- Phase 6 -->
+  <div class="phase">
+    <div class="phase-num">6</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Trade Card Acquisition</span>
+        <span class="badge census">City Count Order</span>
+      </div>
+      <ul class="rules">
+        <li>Receive <em class="key">1 card from each stack</em> up to your city count. <span style="color:var(--text)">(3 cities → a card from stacks 1, 2, and 3.)</span></li>
+        <li>In the same order cards were dealt, players may <em class="key">purchase 1 card from stack 9</em> for <em class="key">15 tokens</em>.</li>
+      </ul>
+      <button class="adv-btn green"  onclick="openModal('cartography-modal')">Cartography</button>
+      <button class="adv-btn orange" onclick="openModal('mining-modal')">Mining</button>
+      <button class="adv-btn blue"         onclick="openModal('rhetoric-modal')">Rhetoric</button>
+      <button class="adv-btn multi-blue-orange" onclick="openModal('wonder-modal')">Wonder of the World</button>
+    </div>
+  </div>
+
+  <!-- Phase 7 -->
+  <div class="phase">
+    <div class="phase-num">7</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Trade</span>
+        <span class="badge simultaneous">Simultaneous</span>
+      </div>
+      <ul class="rules">
+        <li>A trade involves at least <em class="key">3 cards</em> from both players.</li>
+        <li>The first <em class="key">2 cards</em> named in the transaction <em class="key">must be true</em>.</li>
+        <li>Calamities may not be mentioned during trade.</li>
+        <li>The value of a set of the same commodity is printed at the bottom of each card.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 8 -->
+  <div class="phase">
+    <div class="phase-num">8</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Calamity Selection</span>
+        <span class="badge simultaneous">Simultaneous</span>
+      </div>
+      <ul class="rules">
+        <li>If you hold <em class="key">more than 2 calamities</em>, randomly discard down to 2.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 9 -->
+  <div class="phase">
+    <div class="phase-num">9</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Calamity Resolution</span>
+        <span class="badge census">Increasing Calamity Number Order</span>
+      </div>
+      <ul class="rules">
+        <li>Resolve per the calamity reference sheet.</li>
+        <li>1 token off the board = 1 damage, 1 city = 5 damage.</li>
+        <li>Reducing a city = converting it to population tokens equal to the population limit.</li>
+      </ul>
+      <button class="adv-btn green"        onclick="openModal('calendar-modal')">Calendar</button>
+      <button class="adv-btn gold"         onclick="openModal('deism-modal')">Deism</button>
+      <button class="adv-btn blue"         onclick="openModal('drama-poetry-modal')">Drama and Poetry</button>
+      <button class="adv-btn gold"         onclick="openModal('enlightenment-modal')">Enlightenment</button>
+      <button class="adv-btn red"          onclick="openModal('law-modal')">Law</button>
+      <button class="adv-btn orange"       onclick="openModal('masonry-modal')">Masonry</button>
+      <button class="adv-btn green"        onclick="openModal('medicine-modal')">Medicine</button>
+      <button class="adv-btn blue"         onclick="openModal('music-modal')">Music</button>
+      <button class="adv-btn multi-gold-blue"  onclick="openModal('mysticism-modal')">Mysticism</button>
+      <button class="adv-btn gold"         onclick="openModal('mythology-modal')">Mythology</button>
+      <button class="adv-btn multi-gold-green" onclick="openModal('philosophy-modal')">Philosophy</button>
+      <button class="adv-btn orange"       onclick="openModal('pottery-modal')">Pottery</button>
+      <button class="adv-btn blue"         onclick="openModal('sculpture-modal')">Sculpture</button>
+      <button class="adv-btn multi-red-gold" onclick="openModal('theocracy-modal')">Theocracy</button>
+    </div>
+  </div>
+
+  <!-- Phase 10 -->
+  <div class="phase">
+    <div class="phase-num">10</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Special Abilities</span>
+        <span class="badge ast">AST Progress Order</span>
+      </div>
+      <ul class="rules">
+        <li>Resolve any special abilities granted by Advances.</li>
+      </ul>
+      <button class="adv-btn gold" onclick="openModal('diaspora-modal')">Diaspora</button>
+      <button class="adv-btn gold" onclick="openModal('fundamentalism-modal')">Fundamentalism</button>
+      <button class="adv-btn gold" onclick="openModal('monotheism-modal')">Monotheism</button>
+      <button class="adv-btn blue" onclick="openModal('politics-modal')">Politics</button>
+      <button class="adv-btn red"  onclick="openModal('provincial-empire-modal')">Provincial Empire</button>
+      <button class="adv-btn red"  onclick="openModal('public-works-modal')">Public Works</button>
+      <button class="adv-btn gold" onclick="openModal('theology-modal')">Theology</button>
+      <button class="adv-btn orange" onclick="openModal('trade-routes-modal')">Trade Routes</button>
+      <button class="adv-btn gold"   onclick="openModal('universal-doctrine-modal')">Universal Doctrine</button>
+    </div>
+  </div>
+
+  <!-- Phase 11 -->
+  <div class="phase">
+    <div class="phase-num">11</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Remove Surplus Population &amp; Check City Support</span>
+        <span class="badge simultaneous">Simultaneous</span>
+      </div>
+      <ul class="rules">
+        <li>Remove any surplus population tokens.</li>
+        <li>Check city support: 2 population required per city; reduce cities as needed.</li>
+      </ul>
+      <button class="adv-btn orange" onclick="openModal('agriculture-modal')">Agriculture</button>
+    </div>
+  </div>
+
+  <!-- Phase 12 -->
+  <div class="phase">
+    <div class="phase-num">12</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">Civilization Advances Acquisition</span>
+        <span class="badge simultaneous">Simultaneous</span>
+      </div>
+      <ul class="rules">
+        <li>Purchase Advances using commodity cards and/or treasury tokens (each worth 1).</li>
+        <li class="sub"><em class="key">Cost</em> = value in top left − credits from one of the cards colors − special credits from other card.</li>
+        <li>Take new <em class="key">credit tokens</em> after buying a card.</li>
+        <li><em class="warn">IMPORTANT: Credit tokens are permanent, do not discard after using them.</em></li>
+      </ul>
+      <button class="adv-btn green"            onclick="openModal('anatomy-modal')">Anatomy</button>
+      <button class="adv-btn green"            onclick="openModal('empiricism-modal')">Empiricism</button>
+      <button class="adv-btn green"            onclick="openModal('library-modal')">Library</button>
+      <button class="adv-btn multi-blue-red"   onclick="openModal('literacy-modal')">Literacy</button>
+      <button class="adv-btn multi-blue-green" onclick="openModal('mathematics-modal')">Mathematics</button>
+      <button class="adv-btn orange"           onclick="openModal('mining-modal')">Mining</button>
+      <button class="adv-btn multi-orange-gold" onclick="openModal('monument-modal')">Monument</button>
+      <button class="adv-btn orange"           onclick="openModal('roadbuilding-modal')">Roadbuilding</button>
+      <button class="adv-btn orange"           onclick="openModal('trade-empire-modal')">Trade Empire</button>
+      <button class="adv-btn multi-red-green"  onclick="openModal('written-record-modal')">Written Record</button>
+    </div>
+  </div>
+
+  <!-- Phase 13 -->
+  <div class="phase">
+    <div class="phase-num">13</div>
+    <div class="phase-body">
+      <div class="phase-header">
+        <span class="phase-title">AST Alteration</span>
+        <span class="badge ast">AST Progress Order</span>
+      </div>
+      <ul class="rules">
+        <li>Move a space along the AST if eligible.</li>
+      </ul>
+      <button class="adv-btn multi-blue-orange" onclick="openModal('wonder-modal')">Wonder of the World</button>
+    </div>
+  </div>
+
+</div><!-- /.phases -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     MODALS — one per advance card
+     Image path pattern: images/{modal-id without "-modal"}.png
+     e.g. coinage-modal → images/coinage.png
+     ═══════════════════════════════════════════════════════ -->
+
+<!-- Phase 1 -->
+<div id="coinage-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/coinage-400x560.webp" alt="Coinage advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="democracy-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/democracy-400x560.webp" alt="Democracy advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="monarchy-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/monarchy-400x560.webp" alt="Monarchy advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<!-- Phase 3 -->
+<div id="astronavigation-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/astronavigation-400x560.webp" alt="Astronavigation advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="cloth-making-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/cloth-making-400x560.webp" alt="Cloth Making advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="cultural-ascendancy-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/cultural-acendancy-400x560.webp" alt="Cultural Ascendancy advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="diplomacy-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/diplomacy-400x560.webp" alt="Diplomacy advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="military-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/military-400x560.webp" alt="Military advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<!-- Phase 4 -->
+<div id="adv-mil-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/advanced-military-400x560.webp" alt="Advanced Military advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="engineering-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/engineering-400x560.webp" alt="Engineering advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="metalworking-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/metalworking-400x560.webp" alt="Metalworking advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="naval-warfare-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/naval-warfare-400x560.webp" alt="Naval Warfare advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<!-- Phase 5 / shared -->
+<div id="agriculture-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/agriculture-400x560.webp" alt="Agriculture advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="architecture-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/architecture-400x560.webp" alt="Architecture advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<!-- Phase 6 -->
+<div id="cartography-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/cartography-400x560.webp" alt="Cartography advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<!-- Phase 6 / shared with 12 -->
+<div id="mining-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/mining-400x560.webp" alt="Mining advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<!-- Phase 9 -->
+<div id="calendar-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/calendar-400x560.webp" alt="Calendar advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="deism-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/deism-400x560.webp" alt="Deism advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="drama-poetry-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/drama-and-poetry-400x560.webp" alt="Drama and Poetry advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="enlightenment-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/enlightenment-400x560.webp" alt="Enlightenment advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="law-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/law-400x560.webp" alt="Law advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="masonry-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/masonry-400x560.webp" alt="Masonry advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="medicine-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/medicine-400x560.webp" alt="Medicine advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="music-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/music-400x560.webp" alt="Music advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="mysticism-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/mysticism-400x560.webp" alt="Mysticism advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="mythology-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/myhtology-400x560.webp" alt="Mythology advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="philosophy-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/philosophy-400x560.webp" alt="Philosophy advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<!-- Phase 10 -->
+<div id="diaspora-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/diaspora-400x560.webp" alt="Diaspora advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="fundamentalism-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/fundamentalism-400x560.webp" alt="Fundamentalism advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="monotheism-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/monotheism-400x560.webp" alt="Monotheism advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<!-- Phase 12 -->
+<div id="anatomy-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/anatomy-400x560.webp" alt="Anatomy advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="empiricism-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/empiricism-400x560.webp" alt="Empiricism advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="library-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/library-400x560.webp" alt="Library advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="literacy-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/literacy-400x560.webp" alt="Literacy advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="mathematics-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/mathematics-400x560.webp" alt="Mathematics advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="monument-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/monument-400x560.webp" alt="Monument advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+
+<div id="politics-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/politics-400x560.webp" alt="Politics advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="pottery-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/pottery-400x560.webp" alt="Pottery advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="provincial-empire-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/provincial-empire-400x560.webp" alt="Provincial Empire advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="public-works-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/public-works-400x560.webp" alt="Public Works advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+
+<div id="rhetoric-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/rhetoric-400x560.webp" alt="Rhetoric advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="roadbuilding-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/roadbuilding-400x560.webp" alt="Roadbuilding advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="sculpture-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/sculpture-400x560.webp" alt="Sculpture advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="theocracy-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/theocracy-400x560.webp" alt="Theocracy advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="theology-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/theology-400x560.webp" alt="Theology advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+
+<div id="trade-empire-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/trade-empire-400x560.webp" alt="Trade Empire advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="trade-routes-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/trade-routes-400x560.webp" alt="Trade Routes advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="universal-doctrine-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/universal-doctrine-400x560.webp" alt="Universal Doctrine advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="urbanism-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/urbanism-400x560.webp" alt="Urbanism advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="wonder-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/wonder-of-the-world-400x560.webp" alt="Wonder of the World advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+<div id="written-record-modal" class="modal-overlay">
+  <img src="https://mega-empires.com/wp-content/uploads/2025/05/written-record-400x560.webp" alt="Written Record advance card" onerror="this.classList.add('broken-placeholder')">
+</div>
+
+
+<script>
+  function openModal(id) {
+    var m = document.getElementById(id);
+    if (m) m.style.display = 'flex';
+  }
+
+  // Click anywhere (backdrop or image) to close
+  document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+    overlay.addEventListener('click', function() {
+      overlay.style.display = 'none';
+    });
+  });
+
+  // Escape key also closes
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay').forEach(function(m) {
+        m.style.display = 'none';
+      });
+    }
+  });
+</script>
+
+</body>
+</html>
