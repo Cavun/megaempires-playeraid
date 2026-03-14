@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mega Empires – Census & City Helper</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f5f0e8;
+    --surface:   #fdfaf4;
+    --border:    #d4c49a;
+    --gold:      #8a6a20;
+    --gold-dim:  #b08a40;
+    --amber:     #6a4e10;
+    --text:      #2a2010;
+    --muted:     #8a7a5a;
+    --red:       #c0402a;
+    --green:     #3a6a30;
+    --blue:      #2a5070;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.55;
+    min-height: 100vh;
+    padding: 48px 24px 80px;
+  }
+
+  header { text-align: center; margin-bottom: 52px; }
+  header .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(26px, 5vw, 46px);
+    font-weight: 700;
+    color: var(--amber);
+    letter-spacing: .06em;
+    line-height: 1.1;
+  }
+  header .rule {
+    width: 160px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    margin: 18px auto 0;
+  }
+
+  .table-wrap { max-width: 820px; margin: 0 auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  thead tr {
+    background: #ede8da;
+    border-bottom: 1px solid var(--gold-dim);
+  }
+
+  th {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    padding: 14px 20px;
+    text-align: left;
+    font-weight: 600;
+  }
+  th:nth-child(2), th:nth-child(3) { text-align: center; }
+  th:nth-child(4) { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(180,150,80,.08); }
+  tbody tr.updated { background: rgba(58,106,48,.12); }
+
+  td { padding: 14px 20px; font-weight: 300; color: var(--text); }
+
+  td.civ-name {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--amber);
+    letter-spacing: .03em;
+  }
+  td.ast-rank {
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--gold-dim);
+  }
+  td.census { text-align: center; }
+  td.action  { text-align: right; }
+
+  .census-input {
+    width: 80px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    padding: 8px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .census-input:focus { border-color: var(--gold-dim); }
+  .census-input::-webkit-outer-spin-button,
+  .census-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .census-input[type=number] { -moz-appearance: textfield; }
+
+  .remove-btn, .add-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .remove-btn { background: #c04030; border: 1px solid #a03020; color: #fff; }
+  .remove-btn:hover { background: #a03020; border-color: #802010; color: #fff; }
+
+  .add-btn { background: #3a6a30; border: 1px solid #2a5020; color: #fff; }
+  .add-btn:hover { background: #2a5020; border-color: #1a4010; color: #fff; }
+
+  .reset-wrap { text-align: right; margin-top: 18px; }
+  .reset-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .reset-btn:hover { background: var(--gold); border-color: var(--amber); }
+  .reset-btn:disabled { background: #c8bfa0; border-color: #b0a880; color: #fff; cursor: not-allowed; opacity: .6; }
+
+  .removed-section { margin-top: 36px; display: none; }
+  .removed-section.visible { display: block; }
+  .section-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .back-wrap { margin-bottom: 32px; }
+  .back-link {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .back-link:hover { color: var(--amber); }
+
+  /* Military toggle */
+  td.military { text-align: center; }
+  .mil-toggle {
+    width: 44px;
+    height: 26px;
+    border-radius: 13px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: background .2s;
+    background: #ccc;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .mil-toggle::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    top: 3px;
+    left: 3px;
+    transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .mil-toggle.on { background: #c04030; }
+  .mil-toggle.on::after { transform: translateX(18px); }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Quick Reference</p>
+  <h1>Census & City Helper</h1>
+  <div class="rule"></div>
+</header>
+
+<div class="table-wrap">
+
+  <div class="back-wrap">
+    <a href="index.html" class="back-link">← Phase Order</a>
+  </div>
+
+  <table id="active-table">
+    <thead>
+      <tr>
+        <th>Civ</th>
+        <th>AST Rank</th>
+        <th>Census</th>
+        <th>Military</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="active-tbody">
+      <tr data-ast="1">
+        <td class="civ-name">Minoa</td>
+        <td class="ast-rank">1</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+      <tr data-ast="3">
+        <td class="civ-name">Assyria</td>
+        <td class="ast-rank">3</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+      <tr data-ast="5">
+        <td class="civ-name">Celt</td>
+        <td class="ast-rank">5</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+      <tr data-ast="7">
+        <td class="civ-name">Carthage</td>
+        <td class="ast-rank">7</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+      <tr data-ast="9">
+        <td class="civ-name">Hatti</td>
+        <td class="ast-rank">9</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+      <tr data-ast="11">
+        <td class="civ-name">Rome</td>
+        <td class="ast-rank">11</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+      <tr data-ast="13">
+        <td class="civ-name">Iberia</td>
+        <td class="ast-rank">13</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+      <tr data-ast="15">
+        <td class="civ-name">Hellas</td>
+        <td class="ast-rank">15</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+      <tr data-ast="17">
+        <td class="civ-name">Egypt</td>
+        <td class="ast-rank">17</td>
+        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="reset-wrap">
+    <button class="reset-btn" id="sort-census-btn" disabled onclick="sortTable()">Sort by Census ↑</button>
+  </div>
+
+  <!-- Cities table -->
+  <div style="margin-top:36px;">
+    <table id="cities-table">
+      <thead>
+        <tr>
+          <th>Civ</th>
+          <th>AST Rank</th>
+          <th>Cities</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="cities-tbody">
+        <tr data-ast="1">
+          <td class="civ-name">Minoa</td>
+          <td class="ast-rank">1</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+        <tr data-ast="3">
+          <td class="civ-name">Assyria</td>
+          <td class="ast-rank">3</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+        <tr data-ast="5">
+          <td class="civ-name">Celt</td>
+          <td class="ast-rank">5</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+        <tr data-ast="7">
+          <td class="civ-name">Carthage</td>
+          <td class="ast-rank">7</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+        <tr data-ast="9">
+          <td class="civ-name">Hatti</td>
+          <td class="ast-rank">9</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+        <tr data-ast="11">
+          <td class="civ-name">Rome</td>
+          <td class="ast-rank">11</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+        <tr data-ast="13">
+          <td class="civ-name">Iberia</td>
+          <td class="ast-rank">13</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+        <tr data-ast="15">
+          <td class="civ-name">Hellas</td>
+          <td class="ast-rank">15</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+        <tr data-ast="17">
+          <td class="civ-name">Egypt</td>
+          <td class="ast-rank">17</td>
+          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
+          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="reset-wrap">
+      <button class="reset-btn" id="sort-cities-btn" disabled onclick="sortCityTable()">Sort by Cities ↑</button>
+    </div>
+  </div>
+
+  <!-- Single shared not-in-game table -->
+  <div class="removed-section" id="removed-section">
+    <p class="section-label">Not in game</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Civ</th>
+          <th>AST Rank</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="removed-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  function insertByAst(tbody, row) {
+    var ast = parseInt(row.dataset.ast);
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    for (var i = 0; i < rows.length; i++) {
+      if (parseInt(rows[i].dataset.ast) > ast) {
+        tbody.insertBefore(row, rows[i]);
+        return;
+      }
+    }
+    tbody.appendChild(row);
+  }
+
+  var STORAGE_KEY = 'mega-empires-not-in-game';
+
+  function saveRemovedCivs() {
+    var removed = Array.from(document.querySelectorAll('#removed-tbody tr')).map(function(r) {
+      return { ast: r.dataset.ast, name: r.querySelector('.civ-name').textContent };
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(removed));
+  }
+
+  function loadRemovedCivs() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      saved.forEach(function(civ) {
+        var ast = parseInt(civ.ast);
+        var censusRow = document.querySelector('#active-tbody tr[data-ast="' + ast + '"]');
+        var cityRow   = document.querySelector('#cities-tbody tr[data-ast="' + ast + '"]');
+        if (censusRow) censusRow.remove();
+        if (cityRow)   cityRow.remove();
+
+        var newRow = document.createElement('tr');
+        newRow.dataset.ast = ast;
+        newRow.innerHTML =
+          '<td class="civ-name">' + civ.name + '</td>' +
+          '<td class="ast-rank">' + ast + '</td>' +
+          '<td class="action"><button class="add-btn" onclick="addRow(this)">Add to Game</button></td>';
+        document.getElementById('removed-tbody').appendChild(newRow);
+      });
+      if (saved.length > 0) {
+        document.getElementById('removed-section').classList.add('visible');
+      }
+    } catch(e) {}
+  }
+
+  function removeRow(btn) {
+    var ast = parseInt(btn.closest('tr').dataset.ast);
+    var civName = btn.closest('tr').querySelector('.civ-name').textContent;
+
+    // Remove from both tables
+    var censusRow = document.querySelector('#active-tbody tr[data-ast="' + ast + '"]');
+    var cityRow   = document.querySelector('#cities-tbody tr[data-ast="' + ast + '"]');
+    if (censusRow) censusRow.remove();
+    if (cityRow)   cityRow.remove();
+    checkAllUpdated();
+    checkAllCityUpdated();
+
+    // Add to shared removed table
+    var newRow = document.createElement('tr');
+    newRow.dataset.ast = ast;
+    newRow.innerHTML =
+      '<td class="civ-name">' + civName + '</td>' +
+      '<td class="ast-rank">' + ast + '</td>' +
+      '<td class="action"><button class="add-btn" onclick="addRow(this)">Add to Game</button></td>';
+    document.getElementById('removed-tbody').appendChild(newRow);
+    document.getElementById('removed-section').classList.add('visible');
+    saveRemovedCivs();
+  }
+
+  function addRow(btn) {
+    var row = btn.closest('tr');
+    var ast = parseInt(row.dataset.ast);
+    var civName = row.querySelector('.civ-name').textContent;
+
+    // Add back to census table
+    var censusRow = document.createElement('tr');
+    censusRow.dataset.ast = ast;
+    censusRow.innerHTML =
+      '<td class="civ-name">' + civName + '</td>' +
+      '<td class="ast-rank">' + ast + '</td>' +
+      '<td class="census"><input class="census-input" type="number" value="0" min="0"></td>' +
+      '<td class="military"><button class="mil-toggle" onclick="this.classList.toggle(\'on\')"></button></td>' +
+      '<td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>';
+    insertByAst(document.getElementById('active-tbody'), censusRow);
+
+    // Rebind census input listeners for the new row
+    censusRow.querySelector('.census-input').addEventListener('input', onCensusInput);
+    checkAllUpdated();
+
+    // Add back to cities table
+    var cityRow = document.createElement('tr');
+    cityRow.dataset.ast = ast;
+    cityRow.innerHTML =
+      '<td class="civ-name">' + civName + '</td>' +
+      '<td class="ast-rank">' + ast + '</td>' +
+      '<td class="census"><input class="census-input" type="number" value="0" min="0"></td>' +
+      '<td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>';
+    insertByAst(document.getElementById('cities-tbody'), cityRow);
+
+    // Rebind city input listener for the new row
+    cityRow.querySelector('.census-input').addEventListener('input', onCityInput);
+    checkAllCityUpdated();
+
+    row.remove();
+    if (document.getElementById('removed-tbody').querySelectorAll('tr').length === 0) {
+      document.getElementById('removed-section').classList.remove('visible');
+    }
+    saveRemovedCivs();
+  }
+
+  function checkAllUpdated() {
+    var rows = Array.from(document.querySelectorAll('#active-tbody tr'));
+    var allUpdated = rows.length > 0 && rows.every(function(r) { return r.classList.contains('updated'); });
+    document.getElementById('sort-census-btn').disabled = !allUpdated;
+  }
+
+  function checkAllCityUpdated() {
+    var rows = Array.from(document.querySelectorAll('#cities-tbody tr'));
+    var allUpdated = rows.length > 0 && rows.every(function(r) { return r.classList.contains('updated'); });
+    document.getElementById('sort-cities-btn').disabled = !allUpdated;
+  }
+
+  function onCensusInput(e) {
+    var row = e.target.closest('tr');
+    if (row) { row.classList.add('updated'); checkAllUpdated(); }
+  }
+
+  function onCityInput(e) {
+    var row = e.target.closest('tr');
+    if (row) { row.classList.add('updated'); checkAllCityUpdated(); }
+  }
+
+  function bindCensusInputs() {
+    document.querySelectorAll('#active-tbody .census-input').forEach(function(input) {
+      input.removeEventListener('input', onCensusInput);
+      input.addEventListener('input', onCensusInput);
+    });
+  }
+
+  function bindCityInputs() {
+    document.querySelectorAll('#cities-tbody .census-input').forEach(function(input) {
+      input.removeEventListener('input', onCityInput);
+      input.addEventListener('input', onCityInput);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadRemovedCivs();
+    bindCensusInputs();
+    bindCityInputs();
+    checkAllUpdated();
+    checkAllCityUpdated();
+  });
+
+  function sortTable() {
+    var tbody = document.getElementById('active-tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort(function(a, b) {
+      var aMil = a.querySelector('.mil-toggle').classList.contains('on') ? 1 : 0;
+      var bMil = b.querySelector('.mil-toggle').classList.contains('on') ? 1 : 0;
+      if (aMil !== bMil) return aMil - bMil;
+      var aVal = parseInt(a.querySelector('.census-input').value) || 0;
+      var bVal = parseInt(b.querySelector('.census-input').value) || 0;
+      if (aVal !== bVal) return aVal - bVal;
+      return parseInt(a.dataset.ast) - parseInt(b.dataset.ast);
+    });
+    rows.forEach(function(r) {
+      r.classList.remove('updated');
+      tbody.appendChild(r);
+    });
+    document.getElementById('sort-census-btn').disabled = true;
+  }
+
+  function sortCityTable() {
+    var tbody = document.getElementById('cities-tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort(function(a, b) {
+      var aVal = parseInt(a.querySelector('.census-input').value) || 0;
+      var bVal = parseInt(b.querySelector('.census-input').value) || 0;
+      if (aVal !== bVal) return aVal - bVal;
+      return parseInt(a.dataset.ast) - parseInt(b.dataset.ast);
+    });
+    rows.forEach(function(r) {
+      r.classList.remove('updated');
+      tbody.appendChild(r);
+    });
+    document.getElementById('sort-cities-btn').disabled = true;
+  }
+</script>
+
+</body>
+</html>
