@@ -770,9 +770,24 @@
     return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
   }
 
+  var audioCtx = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  // Unlock AudioContext on first user touch
+  document.addEventListener('touchstart', function unlock() {
+    var ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    document.removeEventListener('touchstart', unlock);
+  }, { once: true });
+
   function beep() {
     try {
-      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      var ctx = getAudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
       [0, 0.3, 0.6].forEach(function(t) {
         var osc = ctx.createOscillator();
         var gain = ctx.createGain();
