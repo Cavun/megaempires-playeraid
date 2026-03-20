@@ -219,6 +219,51 @@
   }
   .mil-toggle.on { background: #c04030; }
   .mil-toggle.on::after { transform: translateX(18px); }
+
+  /* Timer */
+  td.timer-cell { white-space: nowrap; }
+  .timer-wrap { display: flex; align-items: center; gap: 5px; }
+  .timer-input {
+    width: 58px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    text-align: center;
+    padding: 5px 4px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .timer-input:focus { border-color: var(--gold-dim); }
+  .timer-display {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--amber);
+    min-width: 44px;
+    text-align: center;
+  }
+  .timer-display.urgent { color: var(--red); }
+  .timer-start-btn, .timer-stop-btn {
+    background: var(--gold-dim);
+    border: none;
+    border-radius: 3px;
+    color: #fff;
+    font-size: 12px;
+    padding: 5px 8px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .timer-start-btn:hover { background: var(--gold); }
+  .timer-stop-btn { background: #9b2a1a; }
+  .timer-stop-btn:hover { background: var(--red); }
+  @keyframes flash-alert {
+    0%, 100% { background: transparent; }
+    50%       { background: rgba(192,64,42,.25); }
+  }
+  tbody tr.timer-done { animation: flash-alert .5s ease-in-out 6; }
 </style>
 </head>
 <body>
@@ -242,6 +287,7 @@
         <th>AST Rank</th>
         <th>Census</th>
         <th>Military</th>
+        <th>Timer</th>
         <th></th>
       </tr>
     </thead>
@@ -251,6 +297,12 @@
         <td class="ast-rank">1</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
       <tr data-ast="3">
@@ -258,6 +310,12 @@
         <td class="ast-rank">3</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
       <tr data-ast="5">
@@ -265,6 +323,12 @@
         <td class="ast-rank">5</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
       <tr data-ast="7">
@@ -272,6 +336,12 @@
         <td class="ast-rank">7</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
       <tr data-ast="9">
@@ -279,6 +349,12 @@
         <td class="ast-rank">9</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
       <tr data-ast="11">
@@ -286,6 +362,12 @@
         <td class="ast-rank">11</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
       <tr data-ast="13">
@@ -293,6 +375,12 @@
         <td class="ast-rank">13</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
       <tr data-ast="15">
@@ -300,6 +388,12 @@
         <td class="ast-rank">15</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
       <tr data-ast="17">
@@ -307,6 +401,12 @@
         <td class="ast-rank">17</td>
         <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
         <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
+        <td class="timer-cell"><div class="timer-wrap">
+          <input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">
+          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
+          <span class="timer-display" style="display:none"></span>
+          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
+        </div></td>
         <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
       </tr>
     </tbody>
@@ -494,6 +594,7 @@
       '<td class="ast-rank">' + ast + '</td>' +
       '<td class="census"><input class="census-input" type="number" value="0" min="0"></td>' +
       '<td class="military"><button class="mil-toggle" onclick="this.classList.toggle(\'on\')"></button></td>' +
+      '<td class="timer-cell">' + timerHtml() + '</td>' +
       '<td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>';
     insertByAst(document.getElementById('active-tbody'), censusRow);
 
@@ -599,6 +700,96 @@
       tbody.appendChild(r);
     });
     document.getElementById('sort-cities-btn').disabled = true;
+  }
+
+  function timerHtml() {
+    return '<div class="timer-wrap">' +
+      '<input class="timer-input" type="text" placeholder="MM:SS" maxlength="5">' +
+      '<button class="timer-start-btn" onclick="startTimer(this)">&#9654;</button>' +
+      '<span class="timer-display" style="display:none"></span>' +
+      '<button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">&#9632;</button>' +
+      '</div>';
+  }
+
+  function parseTime(val) {
+    val = val.trim();
+    if (/^\d+$/.test(val)) return parseInt(val);
+    var parts = val.split(':');
+    if (parts.length === 2) {
+      var m = parseInt(parts[0]) || 0;
+      var s = parseInt(parts[1]) || 0;
+      return m * 60 + s;
+    }
+    return 0;
+  }
+
+  function formatTime(secs) {
+    var m = Math.floor(secs / 60);
+    var s = secs % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function beep() {
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.3, 0.6].forEach(function(t) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.4, ctx.currentTime + t);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.25);
+        osc.start(ctx.currentTime + t);
+        osc.stop(ctx.currentTime + t + 0.25);
+      });
+    } catch(e) {}
+  }
+
+  function startTimer(btn) {
+    var wrap = btn.closest('.timer-wrap');
+    var input = wrap.querySelector('.timer-input');
+    var display = wrap.querySelector('.timer-display');
+    var stopBtn = wrap.querySelector('.timer-stop-btn');
+    var secs = parseTime(input.value);
+    if (!secs || secs <= 0) { input.focus(); return; }
+
+    input.style.display = 'none';
+    btn.style.display = 'none';
+    display.style.display = 'inline';
+    stopBtn.style.display = 'inline';
+    display.textContent = formatTime(secs);
+    display.classList.remove('urgent');
+
+    var interval = setInterval(function() {
+      secs--;
+      display.textContent = formatTime(secs);
+      if (secs <= 10) display.classList.add('urgent');
+      if (secs <= 0) {
+        clearInterval(interval);
+        wrap.dataset.interval = '';
+        var row = wrap.closest('tr');
+        row.classList.add('timer-done');
+        row.addEventListener('animationend', function() { row.classList.remove('timer-done'); }, { once: true });
+        beep();
+        alert('\u23f0 Time is up for ' + row.querySelector('.civ-name').textContent + '!');
+        stopTimer(stopBtn);
+      }
+    }, 1000);
+    wrap.dataset.interval = interval;
+  }
+
+  function stopTimer(btn) {
+    var wrap = btn.closest('.timer-wrap');
+    clearInterval(parseInt(wrap.dataset.interval));
+    var input = wrap.querySelector('.timer-input');
+    var startBtn = wrap.querySelector('.timer-start-btn');
+    var display = wrap.querySelector('.timer-display');
+    input.style.display = 'inline';
+    startBtn.style.display = 'inline';
+    display.style.display = 'none';
+    btn.style.display = 'none';
+    display.classList.remove('urgent');
   }
 </script>
 
