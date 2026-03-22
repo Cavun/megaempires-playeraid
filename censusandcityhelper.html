@@ -441,7 +441,7 @@
 </div><!-- /.table-scroll -->
 
   <div class="reset-wrap">
-    <button class="reset-btn" id="sort-census-btn" onclick="sortTable()">Sort by Census ↑</button>
+    <button class="reset-btn" id="sort-census-btn" onclick="sortTable()">Sort by Census ↓</button>
   </div>
 
   <!-- Cities table -->
@@ -663,6 +663,11 @@
   function checkAllCityUpdated() {
     var rows = Array.from(document.querySelectorAll('#cities-tbody tr'));
     var allUpdated = rows.length > 0 && rows.every(function(r) { return r.classList.contains('updated'); });
+    if (allUpdated) {
+      setTimeout(function() {
+        rows.forEach(function(r) { r.classList.remove('updated'); });
+      }, 800);
+    }
   }
 
   function onCensusInput(e) {
@@ -715,7 +720,7 @@
       if (aMil !== bMil) return aMil - bMil;
       var aVal = parseInt(a.querySelector('.census-input').value) || 0;
       var bVal = parseInt(b.querySelector('.census-input').value) || 0;
-      if (aVal !== bVal) return aVal - bVal;
+      if (aVal !== bVal) return bVal - aVal;
       return parseInt(a.dataset.ast) - parseInt(b.dataset.ast);
     });
     rows.forEach(function(r) {
