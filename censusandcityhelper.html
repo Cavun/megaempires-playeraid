@@ -441,7 +441,7 @@
 </div><!-- /.table-scroll -->
 
   <div class="reset-wrap">
-    <button class="reset-btn" id="sort-census-btn" disabled onclick="sortTable()">Sort by Census ↑</button>
+    <button class="reset-btn" id="sort-census-btn" onclick="sortTable()">Sort by Census ↑</button>
   </div>
 
   <!-- Cities table -->
@@ -515,7 +515,7 @@
     </table>
     </div><!-- /.table-scroll -->
     <div class="reset-wrap">
-      <button class="reset-btn" id="sort-cities-btn" disabled onclick="sortCityTable()">Sort by Cities ↑</button>
+      <button class="reset-btn" id="sort-cities-btn" onclick="sortCityTable()">Sort by Cities ↑</button>
     </div>
   </div>
 
@@ -653,11 +653,9 @@
   function checkAllUpdated() {
     var rows = Array.from(document.querySelectorAll('#active-tbody tr'));
     var allUpdated = rows.length > 0 && rows.every(function(r) { return r.classList.contains('updated'); });
-    document.getElementById('sort-census-btn').disabled = !allUpdated;
     if (allUpdated) {
       setTimeout(function() {
         rows.forEach(function(r) { r.classList.remove('updated'); });
-        document.getElementById('sort-census-btn').disabled = true;
       }, 800);
     }
   }
@@ -665,7 +663,6 @@
   function checkAllCityUpdated() {
     var rows = Array.from(document.querySelectorAll('#cities-tbody tr'));
     var allUpdated = rows.length > 0 && rows.every(function(r) { return r.classList.contains('updated'); });
-    document.getElementById('sort-cities-btn').disabled = !allUpdated;
   }
 
   function onCensusInput(e) {
@@ -725,7 +722,6 @@
       r.classList.remove('updated');
       tbody.appendChild(r);
     });
-    document.getElementById('sort-census-btn').disabled = true;
   }
 
   function sortCityTable() {
@@ -741,7 +737,6 @@
       r.classList.remove('updated');
       tbody.appendChild(r);
     });
-    document.getElementById('sort-cities-btn').disabled = true;
   }
 
   function timerHtml() {
