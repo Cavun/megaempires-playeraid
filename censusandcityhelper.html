@@ -365,6 +365,20 @@
   }
   .nav-link:hover { border-color: var(--gold-dim); color: var(--amber); }
   .nav-link.active { color: var(--amber); border-color: var(--gold-dim); background: rgba(201,168,76,.06); }
+  .nav-link.disabled {
+    color: var(--muted);
+    border-color: transparent;
+    opacity: .5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .nav-link.disabled .soon-tag {
+    font-size: 9px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    opacity: .8;
+    margin-left: 6px;
+  }
 </style>
 </head>
 <body>
@@ -377,7 +391,7 @@
   <p class="nav-drawer-title">Navigation</p>
   <a class="nav-link " href="index.html">Phase Order</a>
   <a class="nav-link active" href="censusandcityhelper.html">Census &amp; City Helper</a>
-  <a class="nav-link" href="calamities.html">Calamity Resolution</a>
+  <span class="nav-link disabled" aria-disabled="true">Calamity Resolution<span class="soon-tag">Soon</span></span>
   <a class="nav-link" href="strategy.html">Strategy &amp; Tips</a>
 </div>
 <div id="toast-container"></div>
