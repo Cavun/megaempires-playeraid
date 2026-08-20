@@ -163,7 +163,7 @@
     margin-bottom: 12px;
     flex-wrap: wrap;
   }
-  .calamity-name-input {
+  .calamity-name-select {
     flex: 1 1 200px;
     min-width: 140px;
     background: rgba(255,255,255,.03);
@@ -177,8 +177,8 @@
     padding: 8px 10px;
     outline: none;
   }
-  .calamity-name-input:focus { border-color: var(--gold-dim); }
-  .calamity-name-input::placeholder { color: var(--muted); font-weight: 400; }
+  .calamity-name-select:focus { border-color: var(--gold-dim); }
+  .calamity-name-select option { color: #000; }
 
   .dup-badge {
     font-family: 'Cinzel', serif;
@@ -207,6 +207,35 @@
   }
   .icon-btn:hover { border-color: var(--gold-dim); color: var(--amber); }
   .icon-btn.remove:hover { border-color: var(--red); color: var(--red); }
+
+  .tradeable-badge {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 3px;
+    margin-left: 8px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .tradeable-badge.yes { background: rgba(74,124,82,.2); color: #a8d8ac; border: 1px solid var(--green); }
+  .tradeable-badge.no  { background: rgba(192,64,42,.15); color: #e0a090; border: 1px solid var(--red-dim); }
+
+  .calamity-custom-name {
+    width: 100%;
+    margin-top: 8px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--amber);
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    padding: 7px 10px;
+    outline: none;
+  }
+  .calamity-custom-name:focus { border-color: var(--gold-dim); }
 
   .calamity-flags {
     display: flex;
@@ -439,14 +468,18 @@
     <ul>
       <li>For a <strong>Non-Tradeable</strong> calamity, the beneficiary and secondary victims must come from the
         <strong>same block</strong> as the primary victim.</li>
-      <li>For a <strong>Tradeable</strong> calamity, either block is fair game.</li>
+      <li>For a <strong>Tradeable</strong> calamity, either block is fair game. Tradeable status is fixed per
+        calamity, so it's set automatically when you pick a name.</li>
       <li>A civ can't be picked as a secondary victim of a calamity if it's already the primary victim,
         a secondary victim, or the beneficiary of <strong>another calamity with the same name</strong> this turn.</li>
-      <li>For board-area calamities (Volcanic Eruption, Flood, Barbarian Hordes, Cyclone, etc.) actual victims
+      <li>For board-area calamities (Volcanic Eruption, Flood, Barbarian Hordes, Cyclone) actual victims
         depend on token positions rather than a free choice — use the "Area effect" flag to relax the block rule.</li>
+      <li><strong>Minor calamities</strong> aren't used in 12–14 player games — this tool hides them from the
+        picker automatically based on how many civs are currently marked "in game" below, and shows them again
+        for 15–18 player games.</li>
     </ul>
-    Ineligible options below are greyed out with the reason on hover. See the rulebook (p.24) for the full
-    12–18 player rules — <a class="text-link" href="https://mega-empires.com/wp-content/uploads/2025/01/MEEM002-MegaEmpires-TheEast-Rulebook-Scenarios-EN-downloaded-from-mega-empires-2025-1.pdf" target="_blank" rel="noopener">Mega Empires: The East rulebook ↗</a>.
+    See the rulebook (p.24) for the full 12–18 player rules —
+    <a class="text-link" href="https://mega-empires.com/wp-content/uploads/2025/01/MEEM002-MegaEmpires-TheEast-Rulebook-Scenarios-EN-downloaded-from-mega-empires-2025-1.pdf" target="_blank" rel="noopener">Mega Empires: The East rulebook ↗</a>.
   </div>
 
   <div class="section-title">Civilizations In This Game</div>
@@ -476,37 +509,18 @@
   <div id="calamity-list"></div>
   <button class="add-calamity-btn" onclick="addCalamity()">+ Add Calamity</button>
 
-  <datalist id="calamity-names">
-    <option value="Barbarian Hordes">
-    <option value="Civil Disorder">
-    <option value="Civil War">
-    <option value="Cyclone">
-    <option value="Drought">
-    <option value="Earthquake">
-    <option value="Epidemic">
-    <option value="Famine">
-    <option value="Fire!">
-    <option value="Flood">
-    <option value="Iconoclasm and Heresy">
-    <option value="Piracy">
-    <option value="Regression">
-    <option value="Slave Revolt">
-    <option value="Superstition">
-    <option value="Treachery">
-    <option value="Tyranny">
-    <option value="Vermin">
-    <option value="Volcanic Eruption">
-  </datalist>
-  <p style="font-size:12px;color:var(--muted);margin-top:6px;">Name suggestions above aren't exhaustive — go by what's printed on the card, and set Tradeable/Non-Tradeable to match it.</p>
+  <p class="roster-note" id="player-count-note" style="margin-top:10px;"></p>
 
 </div>
 
 <script src="civs.js"></script>
+<script src="calamities-data.js"></script>
 <script>
   // ---------- state ----------
   var activeCivs = [];          // [{ast,name,block}] currently "in game"
   var calamities = [];          // working model, persisted to localStorage
   var nextId = 1;
+  var minorsHidden = false;     // true when 12-14 civs are marked "in game"
   var STORAGE_KEY_TURN = 'mega-empires-calamity-turn';
 
   function loadTurnData() {
@@ -514,6 +528,15 @@
       var saved = JSON.parse(localStorage.getItem(STORAGE_KEY_TURN) || 'null');
       if (saved && Array.isArray(saved) && saved.length) {
         calamities = saved;
+        // Migrate calamities saved before the fixed calamity list existed:
+        // infer isCustom from whether the stored name matches a known entry.
+        calamities.forEach(function(c) {
+          if (typeof c.isCustom === 'undefined') {
+            var ref = megaEmpiresGetCalamityByName(c.name);
+            c.isCustom = !ref;
+            c.customTradeable = c.isCustom ? !!c.tradeable : false;
+          }
+        });
         nextId = Math.max.apply(null, saved.map(function(c){return c.id;})) + 1;
         return;
       }
@@ -529,7 +552,9 @@
     var c = {
       id: nextId++,
       name: '',
-      tradeable: false,
+      isCustom: false,
+      customTradeable: false,
+      tradeable: false,   // derived each recompute — see recomputeAll()
       areaEffect: false,
       primaryAst: null,
       beneficiaryAst: null,
@@ -537,7 +562,8 @@
     };
     if (prefill) {
       c.name = prefill.name;
-      c.tradeable = prefill.tradeable;
+      c.isCustom = prefill.isCustom;
+      c.customTradeable = prefill.customTradeable;
       c.areaEffect = prefill.areaEffect;
     }
     return c;
@@ -551,6 +577,7 @@
   // ---------- roster ----------
   function renderRoster() {
     activeCivs = megaEmpiresGetActiveCivs();
+    minorsHidden = megaEmpiresMinorsHiddenForPlayerCount(activeCivs.length);
     var westEl = document.getElementById('roster-west');
     var eastEl = document.getElementById('roster-east');
     westEl.innerHTML = '';
@@ -571,6 +598,12 @@
       chip.textContent = c.name + ' · #' + c.ast;
       eastEl.appendChild(chip);
     });
+
+    var note = document.getElementById('player-count-note');
+    if (note) {
+      note.textContent = activeCivs.length + ' civ' + (activeCivs.length === 1 ? '' : 's') + ' in game — minor calamities are ' +
+        (minorsHidden ? 'hidden (not used in 12–14 player games).' : 'available in the picker.');
+    }
   }
 
   // ---------- eligibility ----------
@@ -639,6 +672,43 @@
     return html;
   }
 
+  // Builds the <option>/<optgroup> markup for the calamity-name select.
+  // Minor-tier calamities are omitted for 12-14 player games, except that
+  // a calamity already selected on this card is always kept visible (with
+  // a warning shown elsewhere) so a roster change never silently blanks it.
+  function calamityOptionsHtml(c) {
+    var selectedName = c.isCustom ? null : c.name;
+    var html = '<option value="" disabled' + (!c.name ? ' selected' : '') + '>— select calamity —</option>';
+
+    html += '<optgroup label="Major">';
+    MEGA_EMPIRES_CALAMITIES.filter(function(x){ return x.tier === 'major'; }).forEach(function(x) {
+      var sel = (selectedName === x.name) ? ' selected' : '';
+      html += '<option value="' + escapeHtml(x.name) + '"' + sel + '>' + x.name + ' — ' + (x.tradeable ? 'Tradeable' : 'Non-Tradeable') + '</option>';
+    });
+    html += '</optgroup>';
+
+    var minors = MEGA_EMPIRES_CALAMITIES.filter(function(x){ return x.tier === 'minor'; });
+    if (!minorsHidden || selectedName) {
+      html += '<optgroup label="Minor' + (minorsHidden ? ' (not used at this player count)' : '') + '">';
+      minors.forEach(function(x) {
+        if (minorsHidden && selectedName !== x.name) return; // keep only the already-selected one visible
+        var sel = (selectedName === x.name) ? ' selected' : '';
+        html += '<option value="' + escapeHtml(x.name) + '"' + sel + '>' + x.name + ' — Tradeable</option>';
+      });
+      html += '</optgroup>';
+    }
+
+    html += '<option value="__custom__"' + (c.isCustom ? ' selected' : '') + '>Other / custom…</option>';
+    return html;
+  }
+
+  function updateCustomVisibility(c, card) {
+    var customNameInput = card.querySelector('.calamity-custom-name');
+    var customTradeableWrap = card.querySelector('.custom-tradeable-wrap');
+    customNameInput.style.display = c.isCustom ? 'block' : 'none';
+    customTradeableWrap.style.display = c.isCustom ? 'flex' : 'none';
+  }
+
   function renderCalamityCard(c) {
     var card = document.createElement('div');
     card.className = 'calamity-card';
@@ -646,13 +716,15 @@
 
     card.innerHTML =
       '<div class="calamity-head">' +
-        '<input type="text" class="calamity-name-input" list="calamity-names" placeholder="Calamity name" value="' + escapeHtml(c.name) + '">' +
+        '<select class="calamity-name-select">' + calamityOptionsHtml(c) + '</select>' +
+        '<span class="tradeable-badge" style="display:none"></span>' +
         '<span class="dup-badge" style="display:none"></span>' +
         '<button class="icon-btn" title="Duplicate this calamity" onclick="duplicateCalamity(' + c.id + ')">⧉</button>' +
         '<button class="icon-btn remove" title="Remove" onclick="removeCalamity(' + c.id + ')">✕</button>' +
       '</div>' +
+      '<input type="text" class="calamity-custom-name" placeholder="Custom calamity name" style="display:none" value="' + escapeHtml(c.isCustom ? c.name : '') + '">' +
       '<div class="calamity-flags">' +
-        '<label class="flag-label"><input type="checkbox" class="tradeable-check"' + (c.tradeable ? ' checked' : '') + '> Tradeable</label>' +
+        '<label class="flag-label custom-tradeable-wrap" style="display:none"><input type="checkbox" class="custom-tradeable-check"' + (c.customTradeable ? ' checked' : '') + '> Tradeable</label>' +
         '<label class="flag-label"><input type="checkbox" class="area-check"' + (c.areaEffect ? ' checked' : '') + '> Area effect (board-selected)</label>' +
       '</div>' +
       '<div class="calamity-row">' +
@@ -671,15 +743,31 @@
       '<div class="calamity-warnings"></div>';
 
     document.getElementById('calamity-list').appendChild(card);
+    updateCustomVisibility(c, card);
 
     // event listeners
-    card.querySelector('.calamity-name-input').addEventListener('input', function(e) {
+    card.querySelector('.calamity-name-select').addEventListener('change', function(e) {
+      var val = e.target.value;
+      if (val === '__custom__') {
+        c.isCustom = true;
+        c.name = card.querySelector('.calamity-custom-name').value || '';
+      } else {
+        c.isCustom = false;
+        c.name = val;
+        var ref = megaEmpiresGetCalamityByName(val);
+        if (ref) c.areaEffect = ref.areaEffect; // reset to the usual default for this calamity
+      }
+      updateCustomVisibility(c, card);
+      saveTurnData();
+      recomputeAll();
+    });
+    card.querySelector('.calamity-custom-name').addEventListener('input', function(e) {
       c.name = e.target.value;
       saveTurnData();
       recomputeAll();
     });
-    card.querySelector('.tradeable-check').addEventListener('change', function(e) {
-      c.tradeable = e.target.checked;
+    card.querySelector('.custom-tradeable-check').addEventListener('change', function(e) {
+      c.customTradeable = e.target.checked;
       saveTurnData();
       recomputeAll();
     });
@@ -710,7 +798,7 @@
   function duplicateCalamity(id) {
     var src = getCalamity(id);
     if (!src) return;
-    addCalamity({ name: src.name, tradeable: src.tradeable, areaEffect: src.areaEffect });
+    addCalamity({ name: src.name, isCustom: src.isCustom, customTradeable: src.customTradeable, areaEffect: src.areaEffect });
   }
 
   function escapeHtml(s) {
@@ -724,7 +812,34 @@
     calamities.forEach(function(c) {
       var card = document.getElementById('card-' + c.id);
       if (!card) return;
+
+      // Derive tradeable status from the fixed calamity list (custom
+      // entries use their own manual flag). Keeping this on c.tradeable
+      // lets the rest of the eligibility logic stay unchanged.
+      var ref = c.isCustom ? null : megaEmpiresGetCalamityByName(c.name);
+      c.tradeable = c.isCustom ? !!c.customTradeable : !!(ref && ref.tradeable);
+
       var sameNameGroup = getSameNameGroup(c);
+
+      // refresh the name select itself (minor-tier availability can change
+      // if the roster is edited on the Census & City Helper page and this
+      // page is reloaded)
+      var nameSelect = card.querySelector('.calamity-name-select');
+      var newOptionsHtml = calamityOptionsHtml(c);
+      if (nameSelect.dataset.lastOptions !== newOptionsHtml) {
+        nameSelect.innerHTML = newOptionsHtml;
+        nameSelect.dataset.lastOptions = newOptionsHtml;
+      }
+
+      // tradeable badge
+      var tBadge = card.querySelector('.tradeable-badge');
+      if (c.name) {
+        tBadge.style.display = 'inline-block';
+        tBadge.className = 'tradeable-badge ' + (c.tradeable ? 'yes' : 'no');
+        tBadge.textContent = c.tradeable ? 'Tradeable' : 'Non-Tradeable';
+      } else {
+        tBadge.style.display = 'none';
+      }
 
       // duplicate badge
       var badge = card.querySelector('.dup-badge');
@@ -779,8 +894,11 @@
 
       // warnings
       var warn = [];
-      if (!c.name.trim()) warn.push('Enter a calamity name so duplicate/eligibility checks can run.');
+      if (!c.name.trim()) warn.push('Pick a calamity so duplicate/eligibility checks can run.');
       if (!c.primaryAst) warn.push('Select a primary victim.');
+      if (ref && ref.tier === 'minor' && minorsHidden) {
+        warn.push('⚠ "' + c.name + '" is a minor calamity — not used in a 12–14 player game. Double-check your player count.');
+      }
       if (c.beneficiaryAst) {
         var bc = megaEmpiresGetCivByAst(c.beneficiaryAst);
         var bStatus = evalBeneficiaryStatus(c, bc);
