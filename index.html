@@ -263,6 +263,26 @@
     border-radius: 4px;
   }
 
+  /* ── Page-link tool button (links to another page, not a modal) ── */
+  .tool-link-btn {
+    display: block;
+    margin: 4px 0 14px;
+    padding: 12px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    color: var(--amber);
+    background: rgba(201,168,76,.10);
+    border: 1px solid var(--gold-dim);
+    border-radius: 4px;
+    transition: background .15s, border-color .15s;
+  }
+  .tool-link-btn:hover { background: rgba(201,168,76,.18); border-color: var(--gold); }
+  .tool-link-btn .arrow { opacity: .7; }
+
   /* Hamburger nav */
   .hamburger {
     position: fixed;
@@ -347,6 +367,7 @@
   <p class="nav-drawer-title">Navigation</p>
   <a class="nav-link active" href="index.html">Phase Order</a>
   <a class="nav-link " href="censusandcityhelper.html">Census &amp; City Helper</a>
+  <a class="nav-link" href="calamities.html">Calamity Resolution</a>
   <a class="nav-link" href="strategy.html">Strategy &amp; Tips</a>
 </div>
 <header>
@@ -517,6 +538,7 @@
         <span class="phase-title">Calamity Resolution</span>
         <span class="badge census">Increasing Calamity Number Order</span>
       </div>
+      <a class="tool-link-btn" href="calamities.html">Open Calamity Organizer <span class="arrow">→</span></a>
       <ul class="rules">
         <li>Resolve per the calamity reference sheet.</li>
         <li>1 token off the board = 1 damage, 1 city = 5 damage.</li>

@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mega Empires – Calamity Resolution</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #1a1610;
+    --surface:   #231f18;
+    --border:    #4a3f2a;
+    --gold:      #c9a84c;
+    --gold-dim:  #7a6130;
+    --amber:     #e8c06a;
+    --text:      #e8dfc8;
+    --muted:     #a09070;
+    --red:       #c0402a;
+    --red-dim:   #8a3020;
+    --green:     #4a7c52;
+    --blue:      #3a6080;
+    --west:      #5a9aca;
+    --east:      #c9a84c;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.55;
+    min-height: 100vh;
+    padding: 48px 24px 100px;
+  }
+
+  header { text-align: center; margin-bottom: 40px; }
+  header .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(24px, 5vw, 42px);
+    font-weight: 700;
+    color: var(--amber);
+    letter-spacing: .06em;
+    line-height: 1.1;
+  }
+  header .rule {
+    width: 160px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 18px auto 0;
+  }
+
+  .content { max-width: 860px; margin: 0 auto; }
+
+  .back-wrap { margin-bottom: 24px; }
+  .back-link {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .back-link:hover { color: var(--amber); }
+
+  .callout {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+    padding: 16px 20px;
+    border-left: 3px solid var(--gold-dim);
+    background: rgba(201,168,76,.04);
+    border-radius: 0 3px 3px 0;
+    margin-bottom: 28px;
+  }
+  .callout strong { color: var(--amber); font-weight: 600; }
+  .callout a.text-link { color: var(--amber); text-decoration: underline; text-underline-offset: 3px; }
+  .callout a.text-link:hover { color: var(--gold); }
+  .callout ul { margin: 8px 0 0 20px; }
+  .callout li { margin-bottom: 4px; }
+
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin: 30px 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  /* ── Roster panel ── */
+  .roster-panel {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    padding: 16px 18px;
+    margin-bottom: 8px;
+  }
+  .roster-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 480px) { .roster-cols { grid-template-columns: 1fr; } }
+  .roster-col-title {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .roster-col-title.west { color: var(--west); }
+  .roster-col-title.east { color: var(--east); }
+  .roster-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .roster-chip {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .04em;
+    padding: 5px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: rgba(255,255,255,.02);
+  }
+  .roster-empty { font-size: 14px; color: var(--muted); font-style: italic; }
+  .roster-note {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .roster-note a { color: var(--amber); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── Calamity cards ── */
+  #calamity-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .calamity-card {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+    padding: 16px 18px 18px;
+    transition: border-color .2s;
+  }
+  .calamity-card:hover { border-color: var(--gold-dim); }
+
+  .calamity-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .calamity-name-input {
+    flex: 1 1 200px;
+    min-width: 140px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--amber);
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    padding: 8px 10px;
+    outline: none;
+  }
+  .calamity-name-input:focus { border-color: var(--gold-dim); }
+  .calamity-name-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  .dup-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #1a1610;
+    background: var(--amber);
+    padding: 4px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 3px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: border-color .15s, color .15s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { border-color: var(--gold-dim); color: var(--amber); }
+  .icon-btn.remove:hover { border-color: var(--red); color: var(--red); }
+
+  .calamity-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+  }
+  .flag-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+  }
+  .flag-label input { accent-color: var(--gold-dim); width: 15px; height: 15px; cursor: pointer; }
+
+  .calamity-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    align-items: start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 480px) { .calamity-row { grid-template-columns: 1fr; } }
+  .calamity-row-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    padding-top: 8px;
+  }
+
+  select.civ-select {
+    width: 100%;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 15px;
+    padding: 8px 10px;
+    outline: none;
+  }
+  select.civ-select:focus { border-color: var(--gold-dim); }
+
+  .ast-badge {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .ast-badge .block-west { color: var(--west); }
+  .ast-badge .block-east { color: var(--east); }
+
+  .civ-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .civ-pill {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .03em;
+    padding: 6px 11px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s, opacity .15s;
+  }
+  .civ-pill .dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  .civ-pill .dot.west { background: var(--west); }
+  .civ-pill .dot.east { background: var(--east); }
+  .civ-pill.selected { background: rgba(201,168,76,.18); border-color: var(--gold); color: var(--amber); }
+  .civ-pill.disabled { opacity: .35; cursor: not-allowed; }
+  .civ-pill.selected.invalid { background: rgba(192,64,42,.18); border-color: var(--red); color: #e88; }
+
+  .no-active-civs { font-size: 14px; color: var(--muted); font-style: italic; }
+
+  .calamity-warnings {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #e08a70;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .add-calamity-btn, .clear-all-btn, .duplicate-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: background .15s, border-color .15s;
+  }
+  .add-calamity-btn { background: rgba(74,124,82,.15); border-color: var(--green); color: #b8e0bc; margin-top: 14px; }
+  .add-calamity-btn:hover { background: rgba(74,124,82,.28); }
+  .clear-all-btn { background: none; border-color: var(--border); color: var(--muted); font-size: 10px; padding: 6px 12px; }
+  .clear-all-btn:hover { border-color: var(--red); color: var(--red); }
+  .duplicate-btn { background: none; border-color: var(--border); color: var(--muted); font-size: 9px; padding: 5px 9px; }
+  .duplicate-btn:hover { border-color: var(--gold-dim); color: var(--amber); }
+
+  /* ── Duplicate summary panel ── */
+  #dup-summary { display: none; }
+  #dup-summary.visible { display: block; }
+  .dup-group {
+    border: 1px solid var(--gold-dim);
+    border-radius: 4px;
+    background: rgba(201,168,76,.05);
+    padding: 12px 16px;
+    margin-bottom: 10px;
+  }
+  .dup-group-title {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--amber);
+    margin-bottom: 6px;
+  }
+  .dup-order { font-size: 14px; color: var(--text); }
+  .dup-order ol { margin-left: 20px; margin-top: 4px; }
+
+  /* Hamburger nav */
+  .hamburger {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 200;
+    background: none;
+    border: 1px solid var(--gold-dim);
+    border-radius: 4px;
+    padding: 8px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: border-color .2s;
+  }
+  .hamburger:hover { border-color: var(--gold); }
+  .hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--gold-dim);
+    border-radius: 2px;
+    transition: background .2s;
+  }
+  .hamburger:hover span { background: var(--gold); }
+  .nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 300;
+  }
+  .nav-overlay.open { display: block; }
+  .nav-drawer {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 260px;
+    height: 100%;
+    z-index: 400;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 48px 24px;
+    transition: left .25s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .nav-drawer.open { left: 0; }
+  .nav-drawer-title {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 16px;
+  }
+  .nav-link {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: .08em;
+    color: var(--text);
+    text-decoration: none;
+    padding: 12px 16px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    transition: border-color .15s, color .15s;
+    display: block;
+  }
+  .nav-link:hover { border-color: var(--gold-dim); color: var(--amber); }
+  .nav-link.active { color: var(--amber); border-color: var(--gold-dim); background: rgba(201,168,76,.06); }
+</style>
+</head>
+<body>
+
+<button class="hamburger" onclick="openNav()" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="nav-overlay" id="nav-overlay" onclick="closeNav()"></div>
+<div class="nav-drawer" id="nav-drawer">
+  <p class="nav-drawer-title">Navigation</p>
+  <a class="nav-link" href="index.html">Phase Order</a>
+  <a class="nav-link" href="censusandcityhelper.html">Census &amp; City Helper</a>
+  <a class="nav-link active" href="calamities.html">Calamity Resolution</a>
+  <a class="nav-link" href="strategy.html">Strategy &amp; Tips</a>
+</div>
+
+<header>
+  <p class="eyebrow">Phase 9 Tool</p>
+  <h1>Calamity Resolution</h1>
+  <div class="rule"></div>
+</header>
+
+<div class="content">
+
+  <div class="back-wrap">
+    <a href="index.html" class="back-link">← Phase Order</a>
+  </div>
+
+  <div class="callout">
+    In 12–18 player games the civilizations are split into two blocks — <strong>West</strong> (AST 1–17, odd)
+    and <strong>East</strong> (AST 2–18, even). For each calamity, set who holds it (the primary victim), then
+    choose a beneficiary and/or secondary victims. This tool applies the large-game rules automatically:
+    <ul>
+      <li>For a <strong>Non-Tradeable</strong> calamity, the beneficiary and secondary victims must come from the
+        <strong>same block</strong> as the primary victim.</li>
+      <li>For a <strong>Tradeable</strong> calamity, either block is fair game.</li>
+      <li>A civ can't be picked as a secondary victim of a calamity if it's already the primary victim,
+        a secondary victim, or the beneficiary of <strong>another calamity with the same name</strong> this turn.</li>
+      <li>For board-area calamities (Volcanic Eruption, Flood, Barbarian Hordes, Cyclone, etc.) actual victims
+        depend on token positions rather than a free choice — use the "Area effect" flag to relax the block rule.</li>
+    </ul>
+    Ineligible options below are greyed out with the reason on hover. See the rulebook (p.24) for the full
+    12–18 player rules — <a class="text-link" href="https://mega-empires.com/wp-content/uploads/2025/01/MEEM002-MegaEmpires-TheEast-Rulebook-Scenarios-EN-downloaded-from-mega-empires-2025-1.pdf" target="_blank" rel="noopener">Mega Empires: The East rulebook ↗</a>.
+  </div>
+
+  <div class="section-title">Civilizations In This Game</div>
+  <div class="roster-panel">
+    <div class="roster-cols">
+      <div>
+        <div class="roster-col-title west">West Block</div>
+        <div class="roster-chip-row" id="roster-west"></div>
+      </div>
+      <div>
+        <div class="roster-col-title east">East Block</div>
+        <div class="roster-chip-row" id="roster-east"></div>
+      </div>
+    </div>
+    <p class="roster-note">Roster is shared with the <a href="censusandcityhelper.html">Census &amp; City Helper</a> page — remove or re-add civs there and it updates here too.</p>
+  </div>
+
+  <div class="section-title">
+    <span>Duplicate Calamities This Turn</span>
+  </div>
+  <div id="dup-summary"></div>
+
+  <div class="section-title">
+    <span>Calamities This Turn</span>
+    <button class="clear-all-btn" onclick="clearAllCalamities()">Clear All</button>
+  </div>
+  <div id="calamity-list"></div>
+  <button class="add-calamity-btn" onclick="addCalamity()">+ Add Calamity</button>
+
+  <datalist id="calamity-names">
+    <option value="Barbarian Hordes">
+    <option value="Civil Disorder">
+    <option value="Civil War">
+    <option value="Cyclone">
+    <option value="Drought">
+    <option value="Earthquake">
+    <option value="Epidemic">
+    <option value="Famine">
+    <option value="Fire!">
+    <option value="Flood">
+    <option value="Iconoclasm and Heresy">
+    <option value="Piracy">
+    <option value="Regression">
+    <option value="Slave Revolt">
+    <option value="Superstition">
+    <option value="Treachery">
+    <option value="Tyranny">
+    <option value="Vermin">
+    <option value="Volcanic Eruption">
+  </datalist>
+  <p style="font-size:12px;color:var(--muted);margin-top:6px;">Name suggestions above aren't exhaustive — go by what's printed on the card, and set Tradeable/Non-Tradeable to match it.</p>
+
+</div>
+
+<script src="civs.js"></script>
+<script>
+  // ---------- state ----------
+  var activeCivs = [];          // [{ast,name,block}] currently "in game"
+  var calamities = [];          // working model, persisted to localStorage
+  var nextId = 1;
+  var STORAGE_KEY_TURN = 'mega-empires-calamity-turn';
+
+  function loadTurnData() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORAGE_KEY_TURN) || 'null');
+      if (saved && Array.isArray(saved) && saved.length) {
+        calamities = saved;
+        nextId = Math.max.apply(null, saved.map(function(c){return c.id;})) + 1;
+        return;
+      }
+    } catch (e) {}
+    calamities = [newCalamity()];
+  }
+
+  function saveTurnData() {
+    localStorage.setItem(STORAGE_KEY_TURN, JSON.stringify(calamities));
+  }
+
+  function newCalamity(prefill) {
+    var c = {
+      id: nextId++,
+      name: '',
+      tradeable: false,
+      areaEffect: false,
+      primaryAst: null,
+      beneficiaryAst: null,
+      secondaryAsts: []
+    };
+    if (prefill) {
+      c.name = prefill.name;
+      c.tradeable = prefill.tradeable;
+      c.areaEffect = prefill.areaEffect;
+    }
+    return c;
+  }
+
+  function getCalamity(id) {
+    for (var i = 0; i < calamities.length; i++) if (calamities[i].id === id) return calamities[i];
+    return null;
+  }
+
+  // ---------- roster ----------
+  function renderRoster() {
+    activeCivs = megaEmpiresGetActiveCivs();
+    var westEl = document.getElementById('roster-west');
+    var eastEl = document.getElementById('roster-east');
+    westEl.innerHTML = '';
+    eastEl.innerHTML = '';
+    var west = activeCivs.filter(function(c){ return c.block === 'West'; });
+    var east = activeCivs.filter(function(c){ return c.block === 'East'; });
+    if (!west.length) westEl.innerHTML = '<span class="roster-empty">None in game</span>';
+    west.forEach(function(c){
+      var chip = document.createElement('span');
+      chip.className = 'roster-chip';
+      chip.textContent = c.name + ' · #' + c.ast;
+      westEl.appendChild(chip);
+    });
+    if (!east.length) eastEl.innerHTML = '<span class="roster-empty">None in game</span>';
+    east.forEach(function(c){
+      var chip = document.createElement('span');
+      chip.className = 'roster-chip';
+      chip.textContent = c.name + ' · #' + c.ast;
+      eastEl.appendChild(chip);
+    });
+  }
+
+  // ---------- eligibility ----------
+  function getSameNameGroup(c) {
+    var key = (c.name || '').trim().toLowerCase();
+    if (!key) return [c];
+    return calamities.filter(function(o){ return (o.name || '').trim().toLowerCase() === key; });
+  }
+
+  function evalSecondaryStatus(c, civ, sameNameGroup) {
+    if (civ.ast === c.primaryAst) return { ok: false, reason: 'Primary victim of this calamity' };
+    if (!c.areaEffect && !c.tradeable && c.primaryAst) {
+      var pc = megaEmpiresGetCivByAst(c.primaryAst);
+      if (pc && civ.block !== pc.block) return { ok: false, reason: 'Different block from primary victim (Non-Tradeable)' };
+    }
+    for (var i = 0; i < sameNameGroup.length; i++) {
+      var o = sameNameGroup[i];
+      if (o.id === c.id) continue;
+      if (o.primaryAst === civ.ast) return { ok: false, reason: 'Already primary victim of another "' + c.name + '" this turn' };
+      if (o.secondaryAsts.indexOf(civ.ast) !== -1) return { ok: false, reason: 'Already a secondary victim of another "' + c.name + '" this turn' };
+      if (o.beneficiaryAst === civ.ast) return { ok: false, reason: 'Already the beneficiary of another "' + c.name + '" this turn' };
+    }
+    return { ok: true };
+  }
+
+  function evalBeneficiaryStatus(c, civ) {
+    if (civ.ast === c.primaryAst) return { ok: false, reason: 'Primary victim of this calamity' };
+    if (!c.areaEffect && !c.tradeable && c.primaryAst) {
+      var pc = megaEmpiresGetCivByAst(c.primaryAst);
+      if (pc && civ.block !== pc.block) return { ok: false, reason: 'Different block from primary victim (Non-Tradeable)' };
+    }
+    return { ok: true };
+  }
+
+  // ---------- rendering ----------
+  function addCalamity(prefill) {
+    var c = newCalamity(prefill);
+    calamities.push(c);
+    renderCalamityCard(c);
+    saveTurnData();
+    recomputeAll();
+  }
+
+  function removeCalamity(id) {
+    calamities = calamities.filter(function(c){ return c.id !== id; });
+    var el = document.getElementById('card-' + id);
+    if (el) el.remove();
+    saveTurnData();
+    recomputeAll();
+  }
+
+  function clearAllCalamities() {
+    if (!confirm('Clear all calamities for this turn?')) return;
+    calamities = [];
+    document.getElementById('calamity-list').innerHTML = '';
+    addCalamity();
+  }
+
+  function civOptionsHtml(selectedAst, includeNone) {
+    var html = '';
+    if (includeNone) html += '<option value="">— none —</option>';
+    activeCivs.forEach(function(c) {
+      var sel = (selectedAst === c.ast) ? ' selected' : '';
+      html += '<option value="' + c.ast + '"' + sel + '>' + c.name + ' (#' + c.ast + ', ' + c.block + ')</option>';
+    });
+    return html;
+  }
+
+  function renderCalamityCard(c) {
+    var card = document.createElement('div');
+    card.className = 'calamity-card';
+    card.id = 'card-' + c.id;
+
+    card.innerHTML =
+      '<div class="calamity-head">' +
+        '<input type="text" class="calamity-name-input" list="calamity-names" placeholder="Calamity name" value="' + escapeHtml(c.name) + '">' +
+        '<span class="dup-badge" style="display:none"></span>' +
+        '<button class="icon-btn" title="Duplicate this calamity" onclick="duplicateCalamity(' + c.id + ')">⧉</button>' +
+        '<button class="icon-btn remove" title="Remove" onclick="removeCalamity(' + c.id + ')">✕</button>' +
+      '</div>' +
+      '<div class="calamity-flags">' +
+        '<label class="flag-label"><input type="checkbox" class="tradeable-check"' + (c.tradeable ? ' checked' : '') + '> Tradeable</label>' +
+        '<label class="flag-label"><input type="checkbox" class="area-check"' + (c.areaEffect ? ' checked' : '') + '> Area effect (board-selected)</label>' +
+      '</div>' +
+      '<div class="calamity-row">' +
+        '<div class="calamity-row-label">Primary Victim</div>' +
+        '<div><select class="civ-select primary-select">' + civOptionsHtml(c.primaryAst, true) + '</select>' +
+        '<div class="ast-badge primary-ast-badge"></div></div>' +
+      '</div>' +
+      '<div class="calamity-row">' +
+        '<div class="calamity-row-label">Beneficiary</div>' +
+        '<div><select class="civ-select beneficiary-select">' + civOptionsHtml(c.beneficiaryAst, true) + '</select></div>' +
+      '</div>' +
+      '<div class="calamity-row">' +
+        '<div class="calamity-row-label">Secondary Victims</div>' +
+        '<div class="civ-pills secondary-pills"></div>' +
+      '</div>' +
+      '<div class="calamity-warnings"></div>';
+
+    document.getElementById('calamity-list').appendChild(card);
+
+    // event listeners
+    card.querySelector('.calamity-name-input').addEventListener('input', function(e) {
+      c.name = e.target.value;
+      saveTurnData();
+      recomputeAll();
+    });
+    card.querySelector('.tradeable-check').addEventListener('change', function(e) {
+      c.tradeable = e.target.checked;
+      saveTurnData();
+      recomputeAll();
+    });
+    card.querySelector('.area-check').addEventListener('change', function(e) {
+      c.areaEffect = e.target.checked;
+      saveTurnData();
+      recomputeAll();
+    });
+    card.querySelector('.primary-select').addEventListener('change', function(e) {
+      c.primaryAst = e.target.value ? parseInt(e.target.value) : null;
+      // primary victim can't also be beneficiary/secondary of the same instance
+      if (c.beneficiaryAst === c.primaryAst) c.beneficiaryAst = null;
+      c.secondaryAsts = c.secondaryAsts.filter(function(a){ return a !== c.primaryAst; });
+      saveTurnData();
+      recomputeAll();
+    });
+    card.querySelector('.beneficiary-select').addEventListener('change', function(e) {
+      c.beneficiaryAst = e.target.value ? parseInt(e.target.value) : null;
+      saveTurnData();
+      recomputeAll();
+    });
+
+    if (!activeCivs.length) {
+      card.querySelector('.secondary-pills').innerHTML = '<span class="no-active-civs">No civs marked "in game" yet.</span>';
+    }
+  }
+
+  function duplicateCalamity(id) {
+    var src = getCalamity(id);
+    if (!src) return;
+    addCalamity({ name: src.name, tradeable: src.tradeable, areaEffect: src.areaEffect });
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  // ---------- recompute (eligibility + duplicate summary) ----------
+  function recomputeAll() {
+    calamities.forEach(function(c) {
+      var card = document.getElementById('card-' + c.id);
+      if (!card) return;
+      var sameNameGroup = getSameNameGroup(c);
+
+      // duplicate badge
+      var badge = card.querySelector('.dup-badge');
+      if (sameNameGroup.length > 1) {
+        var idx = sameNameGroup.indexOf(c) + 1;
+        badge.style.display = 'inline-block';
+        badge.textContent = 'Duplicate ' + idx + ' of ' + sameNameGroup.length;
+      } else {
+        badge.style.display = 'none';
+      }
+
+      // primary AST badge
+      var pc = c.primaryAst ? megaEmpiresGetCivByAst(c.primaryAst) : null;
+      var astBadge = card.querySelector('.primary-ast-badge');
+      astBadge.innerHTML = pc ? ('AST #' + pc.ast + ' · <span class="block-' + pc.block.toLowerCase() + '">' + pc.block + ' block</span>') : '';
+
+      // beneficiary select — disable ineligible options (unless already selected)
+      var beneSelect = card.querySelector('.beneficiary-select');
+      Array.from(beneSelect.options).forEach(function(opt) {
+        if (!opt.value) return;
+        var ast = parseInt(opt.value);
+        var civ = megaEmpiresGetCivByAst(ast);
+        var status = evalBeneficiaryStatus(c, civ);
+        var isCurrent = c.beneficiaryAst === ast;
+        opt.disabled = !status.ok && !isCurrent;
+        opt.textContent = civ.name + ' (#' + civ.ast + ', ' + civ.block + ')' + (!status.ok ? '  — ' + status.reason : '');
+      });
+
+      // secondary victim pills
+      var pillsWrap = card.querySelector('.secondary-pills');
+      if (activeCivs.length) {
+        pillsWrap.innerHTML = '';
+        activeCivs.forEach(function(civ) {
+          var status = evalSecondaryStatus(c, civ, sameNameGroup);
+          var isSelected = c.secondaryAsts.indexOf(civ.ast) !== -1;
+          var pill = document.createElement('button');
+          pill.type = 'button';
+          pill.className = 'civ-pill' + (isSelected ? ' selected' : '') + ((!status.ok) ? (isSelected ? ' invalid' : ' disabled') : '');
+          pill.innerHTML = '<span class="dot ' + civ.block.toLowerCase() + '"></span>' + civ.name + ' #' + civ.ast;
+          if (!status.ok) pill.title = status.reason;
+          pill.addEventListener('click', function() {
+            if (!status.ok && !isSelected) return; // can't newly select an ineligible civ
+            var idx = c.secondaryAsts.indexOf(civ.ast);
+            if (idx === -1) c.secondaryAsts.push(civ.ast);
+            else c.secondaryAsts.splice(idx, 1);
+            saveTurnData();
+            recomputeAll();
+          });
+          pillsWrap.appendChild(pill);
+        });
+      }
+
+      // warnings
+      var warn = [];
+      if (!c.name.trim()) warn.push('Enter a calamity name so duplicate/eligibility checks can run.');
+      if (!c.primaryAst) warn.push('Select a primary victim.');
+      if (c.beneficiaryAst) {
+        var bc = megaEmpiresGetCivByAst(c.beneficiaryAst);
+        var bStatus = evalBeneficiaryStatus(c, bc);
+        if (!bStatus.ok) warn.push('⚠ Beneficiary ' + bc.name + ' may no longer be valid: ' + bStatus.reason + '.');
+      }
+      c.secondaryAsts.forEach(function(ast) {
+        var sc = megaEmpiresGetCivByAst(ast);
+        if (!sc) return;
+        var sStatus = evalSecondaryStatus(c, sc, sameNameGroup);
+        if (!sStatus.ok) warn.push('⚠ Secondary victim ' + sc.name + ' may no longer be valid: ' + sStatus.reason + '.');
+      });
+      card.querySelector('.calamity-warnings').innerHTML = warn.map(function(w){ return '<div>' + w + '</div>'; }).join('');
+    });
+
+    renderDuplicateSummary();
+  }
+
+  function renderDuplicateSummary() {
+    var groups = {};
+    calamities.forEach(function(c) {
+      var key = (c.name || '').trim().toLowerCase();
+      if (!key) return;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(c);
+    });
+
+    var el = document.getElementById('dup-summary');
+    var html = '';
+    var any = false;
+    Object.keys(groups).forEach(function(key) {
+      var group = groups[key];
+      if (group.length < 2) return;
+      any = true;
+      var withRank = group.map(function(c) {
+        var pc = c.primaryAst ? megaEmpiresGetCivByAst(c.primaryAst) : null;
+        return { c: c, civ: pc };
+      });
+      withRank.sort(function(a, b) {
+        if (!a.civ) return 1;
+        if (!b.civ) return -1;
+        return a.civ.ast - b.civ.ast;
+      });
+      html += '<div class="dup-group">' +
+        '<div class="dup-group-title">' + escapeHtml(group[0].name) + ' — ' + group.length + ' copies</div>' +
+        '<div class="dup-order">Suggested resolution order (by primary victim\'s A.S.T. rank):' +
+        '<ol>' + withRank.map(function(x) {
+          return '<li>' + (x.civ ? (x.civ.name + ' (AST #' + x.civ.ast + ')') : '<em>no primary victim set</em>') + '</li>';
+        }).join('') + '</ol>' +
+        'Both copies are resolved simultaneously by default. Any primary victim may insist the calamities instead be resolved fully in this order; a secondary victim of the later copy may insist on waiting for the earlier copy to finish first.</div>' +
+      '</div>';
+    });
+    el.innerHTML = html;
+    el.classList.toggle('visible', any);
+  }
+
+  // ---------- init ----------
+  document.addEventListener('DOMContentLoaded', function() {
+    renderRoster();
+    loadTurnData();
+    document.getElementById('calamity-list').innerHTML = '';
+    calamities.forEach(renderCalamityCard);
+    recomputeAll();
+  });
+
+  function openNav() {
+    document.getElementById('nav-drawer').classList.add('open');
+    document.getElementById('nav-overlay').classList.add('open');
+  }
+  function closeNav() {
+    document.getElementById('nav-drawer').classList.remove('open');
+    document.getElementById('nav-overlay').classList.remove('open');
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeNav();
+  });
+</script>
+
+</body>
+</html>

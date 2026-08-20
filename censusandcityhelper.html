@@ -377,6 +377,7 @@
   <p class="nav-drawer-title">Navigation</p>
   <a class="nav-link " href="index.html">Phase Order</a>
   <a class="nav-link active" href="censusandcityhelper.html">Census &amp; City Helper</a>
+  <a class="nav-link" href="calamities.html">Calamity Resolution</a>
   <a class="nav-link" href="strategy.html">Strategy &amp; Tips</a>
 </div>
 <div id="toast-container"></div>
@@ -410,116 +411,7 @@
         <th></th>
       </tr>
     </thead>
-    <tbody id="active-tbody">
-      <tr data-ast="1">
-        <td class="civ-name">Minoa</td>
-        <td class="ast-rank">1</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-      <tr data-ast="3">
-        <td class="civ-name">Assyria</td>
-        <td class="ast-rank">3</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-      <tr data-ast="5">
-        <td class="civ-name">Celt</td>
-        <td class="ast-rank">5</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-      <tr data-ast="7">
-        <td class="civ-name">Carthage</td>
-        <td class="ast-rank">7</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-      <tr data-ast="9">
-        <td class="civ-name">Hatti</td>
-        <td class="ast-rank">9</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-      <tr data-ast="11">
-        <td class="civ-name">Rome</td>
-        <td class="ast-rank">11</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-      <tr data-ast="13">
-        <td class="civ-name">Iberia</td>
-        <td class="ast-rank">13</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-      <tr data-ast="15">
-        <td class="civ-name">Hellas</td>
-        <td class="ast-rank">15</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-      <tr data-ast="17">
-        <td class="civ-name">Egypt</td>
-        <td class="ast-rank">17</td>
-        <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-        <td class="timer-cell"><div class="timer-wrap">
-          <button class="timer-start-btn" onclick="startTimer(this)">▶</button>
-          <span class="timer-display" style="display:none"></span>
-          <button class="timer-stop-btn" style="display:none" onclick="stopTimer(this)">■</button>
-        </div></td>
-        <td class="military"><button class="mil-toggle" onclick="this.classList.toggle('on')"></button></td>
-        <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-      </tr>
-    </tbody>
+    <tbody id="active-tbody"><!-- rows built from civs.js on load --></tbody>
   </table>
 </div><!-- /.table-scroll -->
 
@@ -539,62 +431,7 @@
           <th></th>
         </tr>
       </thead>
-      <tbody id="cities-tbody">
-        <tr data-ast="1">
-          <td class="civ-name">Minoa</td>
-          <td class="ast-rank">1</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-        <tr data-ast="3">
-          <td class="civ-name">Assyria</td>
-          <td class="ast-rank">3</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-        <tr data-ast="5">
-          <td class="civ-name">Celt</td>
-          <td class="ast-rank">5</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-        <tr data-ast="7">
-          <td class="civ-name">Carthage</td>
-          <td class="ast-rank">7</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-        <tr data-ast="9">
-          <td class="civ-name">Hatti</td>
-          <td class="ast-rank">9</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-        <tr data-ast="11">
-          <td class="civ-name">Rome</td>
-          <td class="ast-rank">11</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-        <tr data-ast="13">
-          <td class="civ-name">Iberia</td>
-          <td class="ast-rank">13</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-        <tr data-ast="15">
-          <td class="civ-name">Hellas</td>
-          <td class="ast-rank">15</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-        <tr data-ast="17">
-          <td class="civ-name">Egypt</td>
-          <td class="ast-rank">17</td>
-          <td class="census"><input class="census-input" type="number" value="0" min="0"></td>
-          <td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>
-        </tr>
-      </tbody>
+      <tbody id="cities-tbody"><!-- rows built from civs.js on load --></tbody>
     </table>
     </div><!-- /.table-scroll -->
     <div class="reset-wrap">
@@ -621,6 +458,7 @@
 
 </div>
 
+<script src="civs.js"></script>
 <script>
   function insertByAst(tbody, row) {
     var ast = parseInt(row.dataset.ast);
@@ -634,7 +472,9 @@
     tbody.appendChild(row);
   }
 
-  var STORAGE_KEY = 'mega-empires-not-in-game';
+  // STORAGE_KEY is shared with the Calamity Resolution page via civs.js
+  // (MEGA_EMPIRES_NOT_IN_GAME_KEY) so "not in game" status stays in sync.
+  var STORAGE_KEY = MEGA_EMPIRES_NOT_IN_GAME_KEY;
 
   function saveRemovedCivs() {
     var removed = Array.from(document.querySelectorAll('#removed-tbody tr')).map(function(r) {
@@ -643,28 +483,57 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(removed));
   }
 
-  function loadRemovedCivs() {
-    try {
-      var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      saved.forEach(function(civ) {
-        var ast = parseInt(civ.ast);
-        var censusRow = document.querySelector('#active-tbody tr[data-ast="' + ast + '"]');
-        var cityRow   = document.querySelector('#cities-tbody tr[data-ast="' + ast + '"]');
-        if (censusRow) censusRow.remove();
-        if (cityRow)   cityRow.remove();
+  function buildActiveRow(ast, name) {
+    var tr = document.createElement('tr');
+    tr.dataset.ast = ast;
+    tr.innerHTML =
+      '<td class="civ-name">' + name + '</td>' +
+      '<td class="ast-rank">' + ast + '</td>' +
+      '<td class="census"><input class="census-input" type="number" value="0" min="0"></td>' +
+      '<td class="timer-cell">' + timerHtml() + '</td>' +
+      '<td class="military"><button class="mil-toggle" onclick="this.classList.toggle(\'on\')"></button></td>' +
+      '<td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>';
+    return tr;
+  }
 
-        var newRow = document.createElement('tr');
-        newRow.dataset.ast = ast;
-        newRow.innerHTML =
+  function buildCityRow(ast, name) {
+    var tr = document.createElement('tr');
+    tr.dataset.ast = ast;
+    tr.innerHTML =
+      '<td class="civ-name">' + name + '</td>' +
+      '<td class="ast-rank">' + ast + '</td>' +
+      '<td class="census"><input class="census-input" type="number" value="0" min="0"></td>' +
+      '<td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>';
+    return tr;
+  }
+
+  // Builds the census/city/not-in-game tables from the shared civs.js
+  // roster (all 18 civilizations), respecting anything already marked
+  // "not in game" in localStorage.
+  function initRoster() {
+    var notInAsts = megaEmpiresGetNotInGame().map(function(c) { return parseInt(c.ast); });
+    var activeTbody = document.getElementById('active-tbody');
+    var citiesTbody = document.getElementById('cities-tbody');
+    var removedTbody = document.getElementById('removed-tbody');
+
+    MEGA_EMPIRES_CIVS.forEach(function(civ) {
+      if (notInAsts.indexOf(civ.ast) === -1) {
+        activeTbody.appendChild(buildActiveRow(civ.ast, civ.name));
+        citiesTbody.appendChild(buildCityRow(civ.ast, civ.name));
+      } else {
+        var tr = document.createElement('tr');
+        tr.dataset.ast = civ.ast;
+        tr.innerHTML =
           '<td class="civ-name">' + civ.name + '</td>' +
-          '<td class="ast-rank">' + ast + '</td>' +
+          '<td class="ast-rank">' + civ.ast + '</td>' +
           '<td class="action"><button class="add-btn" onclick="addRow(this)">Add to Game</button></td>';
-        document.getElementById('removed-tbody').appendChild(newRow);
-      });
-      if (saved.length > 0) {
-        document.getElementById('removed-section').classList.add('visible');
+        removedTbody.appendChild(tr);
       }
-    } catch(e) {}
+    });
+
+    if (removedTbody.querySelectorAll('tr').length > 0) {
+      document.getElementById('removed-section').classList.add('visible');
+    }
   }
 
   function removeRow(btn) {
@@ -697,32 +566,14 @@
     var civName = row.querySelector('.civ-name').textContent;
 
     // Add back to census table
-    var censusRow = document.createElement('tr');
-    censusRow.dataset.ast = ast;
-    censusRow.innerHTML =
-      '<td class="civ-name">' + civName + '</td>' +
-      '<td class="ast-rank">' + ast + '</td>' +
-      '<td class="census"><input class="census-input" type="number" value="0" min="0"></td>' +
-      '<td class="military"><button class="mil-toggle" onclick="this.classList.toggle(\'on\')"></button></td>' +
-      '<td class="timer-cell">' + timerHtml() + '</td>' +
-      '<td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>';
+    var censusRow = buildActiveRow(ast, civName);
     insertByAst(document.getElementById('active-tbody'), censusRow);
-
-    // Rebind census input listeners for the new row
     censusRow.querySelector('.census-input').addEventListener('input', onCensusInput);
     checkAllUpdated();
 
     // Add back to cities table
-    var cityRow = document.createElement('tr');
-    cityRow.dataset.ast = ast;
-    cityRow.innerHTML =
-      '<td class="civ-name">' + civName + '</td>' +
-      '<td class="ast-rank">' + ast + '</td>' +
-      '<td class="census"><input class="census-input" type="number" value="0" min="0"></td>' +
-      '<td class="action"><button class="remove-btn" onclick="removeRow(this)">Remove</button></td>';
+    var cityRow = buildCityRow(ast, civName);
     insertByAst(document.getElementById('cities-tbody'), cityRow);
-
-    // Rebind city input listener for the new row
     cityRow.querySelector('.census-input').addEventListener('input', onCityInput);
     checkAllCityUpdated();
 
@@ -778,7 +629,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', function() {
-    loadRemovedCivs();
+    initRoster();
     bindCensusInputs();
     bindCityInputs();
     checkAllUpdated();
