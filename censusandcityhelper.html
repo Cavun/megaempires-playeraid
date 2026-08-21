@@ -105,6 +105,21 @@
     color: var(--amber);
     letter-spacing: .03em;
   }
+
+  /* City table block column */
+  #cities-table .block-cell {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  #cities-table .block-cell.west { color: var(--green); }
+  #cities-table .block-cell.east { color: #6b3fb8; }
+  #cities-table .block-cell.hidden,
+  #cities-table .block-header.hidden { display: none; }
+
   td.ast-rank {
     text-align: center;
     font-family: 'Cinzel', serif;
@@ -439,6 +454,7 @@
     <table id="cities-table">
       <thead>
         <tr>
+          <th id="cities-block-header">Block</th>
           <th>Civ</th>
           <th>AST Rank</th>
           <th>Cities</th>
@@ -510,10 +526,45 @@
     return tr;
   }
 
+  function getCityBlock(ast, activeCount) {
+    var civ = megaEmpiresGetCivByAst(ast);
+    if (!civ) return '';
+
+    // Default blocks come from civs.js. In 12-16 player games,
+    // Assyria (AST 3) moves to the East block.
+    if (activeCount >= 12 && activeCount <= 16 && ast === 3) return 'East';
+
+    // In 13-14 player games, Egypt (AST 17) moves to the East block.
+    if (activeCount >= 13 && activeCount <= 14 && ast === 17) return 'East';
+
+    return civ.block;
+  }
+
+  function updateCityBlocks() {
+    var citiesTable = document.getElementById('cities-table');
+    var activeCount = megaEmpiresGetActiveCivs().length;
+    var showBlocks = activeCount > 11;
+    var blockHeader = document.getElementById('cities-block-header');
+
+    blockHeader.classList.toggle('hidden', !showBlocks);
+
+    Array.from(citiesTable.querySelectorAll('tbody tr')).forEach(function(row) {
+      var blockCell = row.querySelector('.block-cell');
+      if (!blockCell) return;
+
+      var block = getCityBlock(parseInt(row.dataset.ast), activeCount);
+      blockCell.textContent = showBlocks ? block : '';
+      blockCell.classList.toggle('hidden', !showBlocks);
+      blockCell.classList.toggle('west', block === 'West');
+      blockCell.classList.toggle('east', block === 'East');
+    });
+  }
+
   function buildCityRow(ast, name) {
     var tr = document.createElement('tr');
     tr.dataset.ast = ast;
     tr.innerHTML =
+      '<td class="block-cell"></td>' +
       '<td class="civ-name">' + name + '</td>' +
       '<td class="ast-rank">' + ast + '</td>' +
       '<td class="census"><input class="census-input" type="number" value="0" min="0"></td>' +
@@ -548,6 +599,8 @@
     if (removedTbody.querySelectorAll('tr').length > 0) {
       document.getElementById('removed-section').classList.add('visible');
     }
+
+    updateCityBlocks();
   }
 
   function removeRow(btn) {
@@ -571,6 +624,7 @@
       '<td class="action"><button class="add-btn" onclick="addRow(this)">Add to Game</button></td>';
     document.getElementById('removed-tbody').appendChild(newRow);
     document.getElementById('removed-section').classList.add('visible');
+    updateCityBlocks();
     saveRemovedCivs();
   }
 
@@ -595,6 +649,7 @@
     if (document.getElementById('removed-tbody').querySelectorAll('tr').length === 0) {
       document.getElementById('removed-section').classList.remove('visible');
     }
+    updateCityBlocks();
     saveRemovedCivs();
   }
 
