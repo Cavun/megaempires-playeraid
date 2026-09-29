@@ -7,8 +7,9 @@ Also includes a calamity resolution organizer (primary/secondary victims & benef
 ## Tests
 
 The Census & City Helper has an end-to-end test suite (Playwright + Chromium)
-covering removals and their persistence, the per-civ timers, the alert/flash/
-green-row behaviour and the sort order.
+covering the census table (removals and their persistence, the per-civ timers,
+the alert/flash/green-row behaviour, sort order) and the city table (block
+assignment by player count, highlighting, sort order, removals).
 
 ```
 npm install
