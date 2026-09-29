@@ -1,0 +1,12 @@
+{
+  "name": "megaempires-playeraid",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Player aid for Mega Empires",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

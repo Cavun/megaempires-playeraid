@@ -454,7 +454,7 @@
     <table id="cities-table">
       <thead>
         <tr>
-          <th id="cities-block-header">Block</th>
+          <th class="block-header" id="cities-block-header">Block</th>
           <th>Civ</th>
           <th>AST Rank</th>
           <th>Cities</th>
@@ -542,7 +542,10 @@
 
   function updateCityBlocks() {
     var citiesTable = document.getElementById('cities-table');
-    var activeCount = megaEmpiresGetActiveCivs().length;
+    // Count the rows in the table rather than the saved "not in game" list:
+    // removeRow/addRow update the tables before they write to localStorage,
+    // so the saved list is one change out of date at this point.
+    var activeCount = citiesTable.querySelectorAll('tbody tr').length;
     var showBlocks = activeCount > 11;
     var blockHeader = document.getElementById('cities-block-header');
 
