@@ -55,7 +55,7 @@ test.describe('Stat tracking', () => {
     await expect(page.locator('#report-status')).toContainText('census 0 turns, cities 1 turn');
   });
 
-  test('the report draws a census and a cities line for the chosen civ', async ({ page }) => {
+  test('the report draws every civ on one chart, census and cities', async ({ page }) => {
     for (const turn of [[5, 1], [10, 2], [20, 4]]) {
       for (const civ of ['Minoa', 'Saba', 'Rome']) {
         await setCensus(page, civ, turn[0]);
@@ -67,22 +67,52 @@ test.describe('Stat tracking', () => {
 
     await page.locator('#report-btn').click();
     await expect(page.locator('#report')).toBeVisible();
-    await expect(page.locator('#report-civ option')).toHaveText(['Minoa', 'Saba', 'Rome']);
+    await expect(page.locator('#civ-legend .civ-chip')).toHaveText(['Minoa', 'Saba', 'Rome']);
+    await expect(page.locator('#report-chart .civ-series')).toHaveCount(3);
+    await expect(page.locator('#report-chart .point-census')).toHaveCount(9);
+    await expect(page.locator('#report-chart .point-cities')).toHaveCount(9);
 
-    await page.locator('#report-civ').selectOption({ label: 'Rome' });
-    await expect(page.locator('#report-chart .point-census')).toHaveCount(3);
-    await expect(page.locator('#report-chart .point-cities')).toHaveCount(3);
-    await expect(page.locator('#report-chart')).toHaveAttribute('aria-label', /Rome/);
+    // The legend hides and shows civs.
+    await page.locator('#civ-legend .civ-chip', { hasText: 'Saba' }).click();
+    await expect(page.locator('#report-chart .civ-series')).toHaveCount(2);
+    await expect(page.locator('#report-chart .civ-series[data-ast="2"]')).toHaveCount(0);
+    await page.locator('#hide-all-btn').click();
+    await expect(page.locator('#report-chart .civ-series')).toHaveCount(0);
+    await page.locator('#show-all-btn').click();
+    await expect(page.locator('#report-chart .civ-series')).toHaveCount(3);
+
+    // Hovering shows every civ's numbers for that turn.
+    const box = await page.locator('#report-chart').boundingBox();
+    await page.mouse.move(box.x + box.width - 50, box.y + box.height / 2);
+    const tooltip = page.locator('#chart-tooltip');
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toContainText('Turn 3');
+    await expect(tooltip.locator('tr')).toHaveCount(4);
   });
 
-  test('Clear Stats wipes the saved turns', async ({ page }) => {
-    for (const civ of ['Minoa', 'Saba', 'Rome']) await setCensus(page, civ, 4);
+  test('Reset Stats deletes everything saved', async ({ page }) => {
+    for (const civ of ['Minoa', 'Saba', 'Rome']) {
+      await setCensus(page, civ, 4);
+      await setCities(page, civ, 1);
+    }
     await page.locator('#sort-census-btn').click();
+    await page.locator('#sort-cities-btn').click();
     expect((await stats(page)).census).toHaveLength(1);
+    await page.locator('#report-btn').click();
 
     page.once('dialog', (d) => d.accept());
-    await page.locator('#clear-stats-btn').click();
+    await page.locator('#reset-stats-btn').click();
     expect(await stats(page)).toBeNull();
-    await expect(page.locator('#report-status')).toContainText('census 0 turns');
+    await expect(page.locator('#report-status')).toContainText('census 0 turns, cities 0 turns');
+    await expect(page.locator('#report')).toBeHidden();
+  });
+
+  test('cancelling Reset Stats keeps the saved turns', async ({ page }) => {
+    for (const civ of ['Minoa', 'Saba', 'Rome']) await setCensus(page, civ, 4);
+    await page.locator('#sort-census-btn').click();
+
+    page.once('dialog', (d) => d.dismiss());
+    await page.locator('#reset-stats-btn').click();
+    expect((await stats(page)).census).toHaveLength(1);
   });
 });

@@ -18,8 +18,6 @@
     --red:       #c0402a;
     --green:     #3a6a30;
     --blue:      #2a5070;
-    --census-line: #2a5070;
-    --cities-line: #c0602a;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -400,17 +398,25 @@
   .report-section { margin-top: 48px; }
   .report-status { font-size: 15px; color: var(--muted); margin-bottom: 12px; }
   .report-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .report-actions .reset-btn.secondary { background: transparent; color: var(--gold); }
-  .report-actions .reset-btn.secondary:hover { background: rgba(176,138,64,.12); }
+  .report-actions .reset-btn.danger { background: #c04030; border-color: #a03020; }
+  .report-actions .reset-btn.danger:hover { background: #a03020; border-color: #802010; }
   #report { display: none; margin-top: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 16px; }
   #report.visible { display: block; }
-  .report-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-  .report-controls label { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); }
-  #report-civ { font-family: 'Cinzel', serif; font-size: 14px; color: var(--amber); background: #fff; border: 1px solid var(--border); border-radius: 3px; padding: 6px 8px; }
-  .report-legend { display: flex; gap: 18px; margin-left: auto; font-size: 14px; color: var(--text); }
-  .report-legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .report-legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
-  .report-legend i.dashed { border-top-style: dashed; }
+  .report-key { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; font-size: 14px; color: var(--text); }
+  .report-key span { display: inline-flex; align-items: center; gap: 6px; }
+  .report-key i { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--text); }
+  .report-key i.dashed { border-top-style: dashed; }
+  .report-key .key-btns { margin-left: auto; display: flex; gap: 6px; }
+  .key-btn { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 3px; padding: 4px 8px; cursor: pointer; }
+  .key-btn:hover { border-color: var(--gold-dim); color: var(--amber); }
+  .civ-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .civ-chip { display: inline-flex; align-items: center; gap: 6px; font-family: 'Cinzel', serif; font-size: 12px; color: var(--text); background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 4px 10px; cursor: pointer; }
+  .civ-chip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .civ-chip.off { opacity: .4; text-decoration: line-through; }
+  .civ-chip.off i { background: transparent !important; border: 1px solid var(--muted); }
+  #report-chart .civ-series { transition: opacity .15s; }
+  #report-chart.focus .civ-series { opacity: .12; }
+  #report-chart.focus .civ-series.focused { opacity: 1; }
   .chart-wrap { position: relative; }
   #report-chart { width: 100%; height: auto; display: block; }
   #report-chart text { font-family: 'Crimson Pro', Georgia, serif; font-size: 13px; fill: var(--muted); }
@@ -418,9 +424,13 @@
   #report-chart .grid { stroke: var(--border); stroke-width: 1; }
   #report-chart .axis { stroke: var(--gold-dim); stroke-width: 1; }
   #report-chart .crosshair { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
-  .chart-tooltip { position: absolute; pointer-events: none; display: none; background: var(--text); color: #fff; font-size: 14px; line-height: 1.35; padding: 6px 10px; border-radius: 3px; white-space: nowrap; transform: translate(-50%, -100%); }
+  .chart-tooltip { position: absolute; pointer-events: none; display: none; background: var(--text); color: #fff; font-size: 13px; line-height: 1.3; padding: 6px 10px; border-radius: 3px; white-space: nowrap; z-index: 5; }
+  .chart-tooltip table { border: none; background: none; width: auto; margin-top: 2px; }
+  .chart-tooltip td { padding: 0 0 0 10px; color: #fff; font-weight: 400; text-align: right; }
+  .chart-tooltip td:first-child { padding-left: 0; text-align: left; }
+  .chart-tooltip td i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+  .chart-tooltip th { font-size: 9px; padding: 0 0 0 10px; color: rgba(255,255,255,.6); text-align: right; }
   .chart-tooltip b { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: .06em; }
-  .report-empty { color: var(--muted); font-style: italic; }
 </style>
 </head>
 <body>
@@ -520,21 +530,22 @@
     <p class="report-status" id="report-status"></p>
     <div class="report-actions">
       <button class="reset-btn" id="report-btn" onclick="showReport()">Generate Report</button>
-      <button class="reset-btn secondary" id="clear-stats-btn" onclick="clearStats()">Clear Stats</button>
+      <button class="reset-btn danger" id="reset-stats-btn" onclick="resetStats()">Reset Stats</button>
     </div>
     <div id="report">
-      <div class="report-controls">
-        <label for="report-civ">Civ</label>
-        <select id="report-civ" onchange="renderChart()"></select>
-        <div class="report-legend">
-          <span><i style="border-color:var(--census-line)"></i>Census</span>
-          <span><i class="dashed" style="border-color:var(--cities-line)"></i>Cities</span>
+      <div class="report-key">
+        <span><i></i>Census (left axis)</span>
+        <span><i class="dashed"></i>Cities (right axis)</span>
+        <div class="key-btns">
+          <button class="key-btn" id="show-all-btn" onclick="setAllCivsShown(true)">Show all</button>
+          <button class="key-btn" id="hide-all-btn" onclick="setAllCivsShown(false)">Hide all</button>
         </div>
       </div>
       <div class="chart-wrap">
         <svg id="report-chart" role="img"></svg>
         <div class="chart-tooltip" id="chart-tooltip"></div>
       </div>
+      <div class="civ-legend" id="civ-legend"></div>
     </div>
   </div>
 
@@ -857,35 +868,76 @@
       '. A turn is saved when every civ’s number has been entered and the table is sorted.';
   }
 
-  function clearStats() {
-    if (!confirm('Clear all recorded census and city stats for this game?')) return;
+  function resetStats() {
+    if (!confirm('Reset stats? This deletes every saved census and city turn.')) return;
     localStorage.removeItem(STATS_KEY);
     document.querySelectorAll('#active-tbody tr, #cities-tbody tr').forEach(function(r) {
       delete r.dataset.entered;
     });
+    hiddenCivs = {};
     updateReportStatus();
     document.getElementById('report').classList.remove('visible');
   }
 
-  function showReport() {
-    var stats = loadStats();
-    var select = document.getElementById('report-civ');
-    var previous = select.value;
+  // One colour per civ, by AST rank, so a civ keeps its colour whoever else
+  // is in the game or hidden.
+  var CIV_COLORS = {
+    1: '#1f77b4', 2: '#d62728', 3: '#2ca02c', 4: '#9467bd', 5: '#8c564b', 6: '#e377c2',
+    7: '#5a5a5a', 8: '#9a9a10', 9: '#1295a5', 10: '#ff7f0e', 11: '#393b79', 12: '#637939',
+    13: '#b8862b', 14: '#843c39', 15: '#7b4173', 16: '#6baed6', 17: '#e6550d', 18: '#31a354'
+  };
 
-    // Every civ that appears in any recorded turn, in AST order.
-    var civs = {};
+  // Civs switched off in the legend; kept while the page is open.
+  var hiddenCivs = {};
+
+  // Every civ that appears in any recorded turn, as [{ ast, name }] in AST order.
+  function reportCivs(stats) {
+    var names = {};
     stats.census.concat(stats.cities).forEach(function(t) {
-      Object.keys(t.values).forEach(function(ast) { civs[ast] = t.values[ast].name; });
+      Object.keys(t.values).forEach(function(ast) { names[ast] = t.values[ast].name; });
     });
-    var asts = Object.keys(civs).sort(function(a, b) { return a - b; });
+    return Object.keys(names)
+      .sort(function(a, b) { return a - b; })
+      .map(function(ast) { return { ast: ast, name: names[ast] }; });
+  }
 
-    select.innerHTML = asts.map(function(ast) {
-      return '<option value="' + ast + '">' + civs[ast] + '</option>';
-    }).join('');
-    if (asts.indexOf(previous) !== -1) select.value = previous;
-
+  function showReport() {
     document.getElementById('report').classList.add('visible');
     renderChart();
+  }
+
+  function toggleCiv(ast) {
+    if (hiddenCivs[ast]) delete hiddenCivs[ast]; else hiddenCivs[ast] = true;
+    renderChart();
+  }
+
+  function setAllCivsShown(show) {
+    hiddenCivs = {};
+    if (!show) reportCivs(loadStats()).forEach(function(c) { hiddenCivs[c.ast] = true; });
+    renderChart();
+  }
+
+  function focusCiv(ast) {
+    var svg = document.getElementById('report-chart');
+    svg.classList.toggle('focus', !!ast);
+    svg.querySelectorAll('.civ-series').forEach(function(g) {
+      g.classList.toggle('focused', g.dataset.ast === ast);
+    });
+  }
+
+  function renderLegend(civs) {
+    var legend = document.getElementById('civ-legend');
+    legend.innerHTML = '';
+    civs.forEach(function(c) {
+      var chip = document.createElement('button');
+      chip.className = 'civ-chip' + (hiddenCivs[c.ast] ? ' off' : '');
+      chip.dataset.ast = c.ast;
+      chip.innerHTML = '<i style="background:' + CIV_COLORS[c.ast] + '"></i>' + c.name;
+      chip.addEventListener('click', function() { toggleCiv(c.ast); });
+      chip.addEventListener('mouseenter', function() { if (!hiddenCivs[c.ast]) focusCiv(c.ast); });
+      chip.addEventListener('mouseleave', function() { focusCiv(null); });
+      legend.appendChild(chip);
+    });
   }
 
   function svgEl(tag, attrs, text) {
@@ -899,25 +951,24 @@
     var svg = document.getElementById('report-chart');
     var tooltip = document.getElementById('chart-tooltip');
     var stats = loadStats();
-    var ast = document.getElementById('report-civ').value;
+    var civs = reportCivs(stats);
     svg.innerHTML = '';
+    svg.classList.remove('focus');
     tooltip.style.display = 'none';
+    renderLegend(civs);
 
     // Size the drawing to the container so text stays readable on phones.
     var W = Math.max(300, svg.parentNode.clientWidth || 760);
-    var H = W < 500 ? 280 : 340, L = 48, R = 44, T = 20, B = 48;
+    var H = W < 500 ? 300 : 400, L = 48, R = 44, T = 20, B = 48;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('aria-label', 'Census and city count by turn for every civ');
     var plotW = W - L - R, plotH = H - T - B;
     var turns = Math.max(stats.census.length, stats.cities.length);
 
-    if (!ast || turns === 0) {
-      svg.appendChild(svgEl('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle', 'class': 'report-empty' },
-        'No turns recorded yet'));
+    if (turns === 0) {
+      svg.appendChild(svgEl('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle' }, 'No turns recorded yet'));
       return;
     }
-
-    var civName = document.getElementById('report-civ').selectedOptions[0].textContent;
-    svg.setAttribute('aria-label', civName + ' census and city count by turn');
 
     var x = function(turn) { return turns === 1 ? L + plotW / 2 : L + (turn - 1) / (turns - 1) * plotW; };
     var yCensus = function(v) { return T + plotH - Math.min(v, CENSUS_MAX) / CENSUS_MAX * plotH; };
@@ -935,9 +986,9 @@
     svg.appendChild(svgEl('line', { x1: L, x2: L, y1: T, y2: T + plotH, 'class': 'axis' }));
     svg.appendChild(svgEl('line', { x1: W - R, x2: W - R, y1: T, y2: T + plotH, 'class': 'axis' }));
     svg.appendChild(svgEl('text', { 'class': 'axis-title', 'text-anchor': 'middle',
-      transform: 'translate(14,' + (T + plotH / 2) + ') rotate(-90)', fill: 'var(--census-line)' }, 'CENSUS'));
+      transform: 'translate(14,' + (T + plotH / 2) + ') rotate(-90)' }, 'CENSUS'));
     svg.appendChild(svgEl('text', { 'class': 'axis-title', 'text-anchor': 'middle',
-      transform: 'translate(' + (W - 12) + ',' + (T + plotH / 2) + ') rotate(90)', fill: 'var(--cities-line)' }, 'CITIES'));
+      transform: 'translate(' + (W - 12) + ',' + (T + plotH / 2) + ') rotate(90)' }, 'CITIES'));
 
     // Bottom axis: turn number. Thin the labels out on long games.
     var step = Math.ceil(turns / Math.max(4, Math.floor(plotW / 40)));
@@ -948,11 +999,11 @@
     }
     svg.appendChild(svgEl('text', { x: L + plotW / 2, y: H - 6, 'text-anchor': 'middle', 'class': 'axis-title' }, 'TURN'));
 
-    // One line per measure. A turn the civ wasn't in the game breaks the line.
-    function series(records, y, color, dashed, kind) {
+    // One line per measure per civ. A turn the civ wasn't in the game breaks the line.
+    function series(g, ast, records, y, color, dashed, kind) {
       var points = records.map(function(rec) {
         var v = rec.values[ast];
-        return v ? { turn: rec.turn, value: v.value, x: x(rec.turn), y: y(v.value) } : null;
+        return v ? { x: x(rec.turn), y: y(v.value) } : null;
       });
       var d = '', pen = false;
       points.forEach(function(p) {
@@ -963,37 +1014,60 @@
       if (d) {
         var attrs = { d: d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' };
         if (dashed) attrs['stroke-dasharray'] = '6 4';
-        svg.appendChild(svgEl('path', attrs));
+        g.appendChild(svgEl('path', attrs));
       }
       points.forEach(function(p) {
-        if (p) svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 4, fill: color,
-          stroke: 'var(--surface)', 'stroke-width': 2, 'class': 'point-' + kind }));
+        if (p) g.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 3, fill: color,
+          stroke: 'var(--surface)', 'stroke-width': 1.5, 'class': 'point-' + kind }));
       });
-      return points;
     }
-    var censusPts = series(stats.census, yCensus, 'var(--census-line)', false, 'census');
-    var citiesPts = series(stats.cities, yCities, 'var(--cities-line)', true, 'cities');
+    var shown = civs.filter(function(c) { return !hiddenCivs[c.ast]; });
+    shown.forEach(function(c) {
+      var g = svgEl('g', { 'class': 'civ-series', 'data-ast': c.ast });
+      series(g, c.ast, stats.census, yCensus, CIV_COLORS[c.ast], false, 'census');
+      series(g, c.ast, stats.cities, yCities, CIV_COLORS[c.ast], true, 'cities');
+      svg.appendChild(g);
+    });
 
-    // Hover / tap: a crosshair and the values for the nearest turn.
+    // Hover / tap: a crosshair and every shown civ's values for the nearest turn.
     var crosshair = svgEl('line', { y1: T, y2: T + plotH, 'class': 'crosshair', visibility: 'hidden' });
     svg.appendChild(crosshair);
     var hit = svgEl('rect', { x: L - 10, y: T, width: plotW + 20, height: plotH, fill: 'transparent' });
     svg.appendChild(hit);
 
     function pointAt(evt) {
+      if (!shown.length) return;
       var rect = svg.getBoundingClientRect();
       var px = (evt.clientX - rect.left) / rect.width * W;
       var turn = turns === 1 ? 1 : Math.round((px - L) / plotW * (turns - 1)) + 1;
       turn = Math.max(1, Math.min(turns, turn));
-      var cen = censusPts[turn - 1], cit = citiesPts[turn - 1];
+      var cen = stats.census[turn - 1], cit = stats.cities[turn - 1];
+      var rows = shown.map(function(c) {
+        return {
+          civ: c,
+          census: cen && cen.values[c.ast] ? cen.values[c.ast].value : null,
+          cities: cit && cit.values[c.ast] ? cit.values[c.ast].value : null
+        };
+      }).sort(function(a, b) {
+        var ac = a.census === null ? -1 : a.census, bc = b.census === null ? -1 : b.census;
+        return bc - ac || a.civ.ast - b.civ.ast;
+      });
+
       crosshair.setAttribute('x1', x(turn));
       crosshair.setAttribute('x2', x(turn));
       crosshair.setAttribute('visibility', 'visible');
-      tooltip.innerHTML = '<b>' + civName + ' · Turn ' + turn + '</b><br>' +
-        'Census: ' + (cen ? cen.value : '–') + '<br>Cities: ' + (cit ? cit.value : '–');
-      tooltip.style.left = (x(turn) / W * rect.width) + 'px';
-      tooltip.style.top = (T / H * rect.height) + 'px';
+      tooltip.innerHTML = '<b>Turn ' + turn + '</b><table><tr><th></th><th>Census</th><th>Cities</th></tr>' +
+        rows.map(function(r) {
+          return '<tr><td><i style="background:' + CIV_COLORS[r.civ.ast] + '"></i>' + r.civ.name + '</td>' +
+            '<td>' + (r.census === null ? '–' : r.census) + '</td>' +
+            '<td>' + (r.cities === null ? '–' : r.cities) + '</td></tr>';
+        }).join('') + '</table>';
       tooltip.style.display = 'block';
+      // Sit beside the crosshair, on whichever side has more room.
+      var cx = x(turn) / W * rect.width;
+      var left = cx > rect.width / 2 ? cx - tooltip.offsetWidth - 12 : cx + 12;
+      tooltip.style.left = Math.max(0, Math.min(rect.width - tooltip.offsetWidth, left)) + 'px';
+      tooltip.style.top = (T / H * rect.height) + 'px';
     }
     hit.addEventListener('pointermove', pointAt);
     hit.addEventListener('pointerdown', pointAt);
