@@ -78,6 +78,36 @@
   }
   .tool-btn:hover { border-color: var(--gold); background: rgba(201,168,76,.08); }
 
+  .limit-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .limit-row label {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+  .limit-row select {
+    width: 70px;
+    background: var(--surface);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    text-align: center;
+    text-align-last: center;
+    padding: 6px 8px;
+  }
+  .limit-row select:focus { outline: none; border-color: var(--gold); }
+
+  .resolve-btn { display: block; width: 100%; margin-top: 20px; padding: 14px 16px; font-size: 14px; }
+
   .counters { display: flex; flex-direction: column; gap: 14px; }
 
   .counter {
@@ -94,6 +124,8 @@
 
   /* The two tap halves fill the whole box; the label, count and remove
      button sit above them. Only the label and remove button take clicks. */
+  .tap-area { position: relative; }
+
   .half {
     position: absolute;
     top: 0;
@@ -132,9 +164,14 @@
     font-weight: 600;
     letter-spacing: .05em;
     text-align: center;
+    text-align-last: center;
     padding: 2px 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
   }
-  .label::placeholder { color: var(--gold-dim); font-weight: 400; }
+  .label.unset { color: var(--gold-dim); font-weight: 400; }
+  .label option { background: var(--surface); color: var(--text); }
   .label:focus { outline: none; border-bottom-color: var(--gold-dim); }
   .count {
     font-family: 'Cinzel', serif;
@@ -143,6 +180,32 @@
     color: var(--text);
     line-height: 1.1;
   }
+
+  .counter-foot {
+    border-top: 1px solid var(--border);
+    padding: 6px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 18px;
+  }
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .toggle input { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+  .toggle:has(input:checked) { color: var(--amber); }
+
+  /* A city has no unit count to tap up or down. */
+  .counter.is-city .half { display: none; }
+  .counter.is-city .count { font-size: 40px; line-height: 1.54; color: var(--amber); }
 
   .remove {
     position: absolute;
@@ -277,23 +340,42 @@
 </header>
 
 <div class="content">
+  <div class="limit-row">
+    <label for="pop-limit">Population Limit</label>
+    <select id="pop-limit">
+      <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option>
+    </select>
+  </div>
   <div class="toolbar">
     <button class="tool-btn" id="add-btn" onclick="addCounter()">+ Add Counter</button>
     <button class="tool-btn" id="reset-btn" onclick="resetCounts()">Reset Counts</button>
   </div>
   <div class="counters" id="counters"></div>
+  <button class="tool-btn resolve-btn" id="resolve-btn" onclick="resolveConflict()">Resolve</button>
 </div>
 
+<script src="civs.js"></script>
 <script>
   var STORAGE_KEY = 'mega-empires-conflict-counters';
+  var LIMIT_KEY = 'mega-empires-conflict-limit';
   var counters = load();
+
+  var limitInput = document.getElementById('pop-limit');
+  try { limitInput.value = localStorage.getItem(LIMIT_KEY) || '0'; } catch (e) {}
+  if (!limitInput.value) limitInput.value = '0';
+  limitInput.addEventListener('change', function() {
+    try { localStorage.setItem(LIMIT_KEY, limitInput.value); } catch (e) {}
+  });
 
   function load() {
     try {
       var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if (Array.isArray(saved)) return saved;
     } catch (e) {}
-    return [{ label: '', count: 0 }, { label: '', count: 0 }];
+    return [
+      { label: '', count: 0, metalworking: false, engineering: false, city: false },
+      { label: '', count: 0, metalworking: false, engineering: false, city: false }
+    ];
   }
 
   function save() {
@@ -311,20 +393,53 @@
       var box = document.createElement('div');
       box.className = 'counter';
       box.innerHTML =
-        '<button class="half dec" aria-label="Decrease">−</button>' +
-        '<button class="half inc" aria-label="Increase">+</button>' +
-        '<div class="counter-body">' +
-          '<input class="label" type="text" placeholder="Label" maxlength="30">' +
-          '<div class="count"></div>' +
+        '<div class="tap-area">' +
+          '<button class="half dec" aria-label="Decrease">−</button>' +
+          '<button class="half inc" aria-label="Increase">+</button>' +
+          '<div class="counter-body">' +
+            '<select class="label" aria-label="Civilization"></select>' +
+            '<div class="count"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="counter-foot">' +
+          '<label class="toggle mw-toggle"><input class="mw" type="checkbox"> Metalworking</label>' +
+          '<label class="toggle eng-toggle"><input class="eng" type="checkbox"> Engineering</label>' +
+          '<label class="toggle city-toggle"><input class="city" type="checkbox"> City</label>' +
         '</div>' +
         '<button class="remove" aria-label="Remove counter">×</button>';
 
       var countEl = box.querySelector('.count');
-      countEl.textContent = c.count;
+      function showCount() {
+        box.classList.toggle('is-city', !!c.city);
+        countEl.textContent = c.city ? 'City' : c.count;
+      }
+      showCount();
 
       var label = box.querySelector('.label');
-      label.value = c.label;
-      label.addEventListener('input', function() { c.label = label.value; save(); });
+      fillCivOptions(label, c.label);
+      label.addEventListener('change', function() {
+        c.label = label.value;
+        label.classList.toggle('unset', !c.label);
+        save();
+      });
+
+      var mw = box.querySelector('.mw');
+      mw.checked = !!c.metalworking;
+      mw.addEventListener('change', function() { c.metalworking = mw.checked; save(); });
+
+      var eng = box.querySelector('.eng');
+      eng.checked = !!c.engineering;
+      eng.addEventListener('change', function() { c.engineering = eng.checked; save(); });
+
+      var city = box.querySelector('.city');
+      city.checked = !!c.city;
+      city.addEventListener('change', function() {
+        // Only one city per conflict: ticking this one unticks any other.
+        if (city.checked) counters.forEach(function(o) { o.city = false; });
+        c.city = city.checked;
+        save();
+        render();
+      });
 
       box.querySelector('.dec').addEventListener('click', function() {
         if (c.count > 0) c.count--;
@@ -346,8 +461,25 @@
     });
   }
 
+  // Civ choices are the civs in play on the Census & City Helper. A saved
+  // civ that has since been taken out of play is kept as an option so the
+  // counter does not lose it.
+  function fillCivOptions(select, current) {
+    var names = megaEmpiresGetActiveCivs().map(function(civ) { return civ.name; });
+    if (current && names.indexOf(current) < 0) names.push(current);
+    select.innerHTML = '<option value="">Civ</option>';
+    names.forEach(function(name) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+    select.value = current || '';
+    select.classList.toggle('unset', !current);
+  }
+
   function addCounter() {
-    counters.push({ label: '', count: 0 });
+    counters.push({ label: '', count: 0, metalworking: false, engineering: false, city: false });
     save();
     render();
   }
@@ -356,6 +488,66 @@
     counters.forEach(function(c) { c.count = 0; });
     save();
     render();
+  }
+
+  // Remove units in rounds. Each round, the counter with the fewest units
+  // loses one first, then the next fewest, and so on; tied counters lose
+  // theirs together. Stops as soon as only one counter has units left or
+  // the total is at or below the population limit (blank counts as 0).
+  // Counters with Metalworking lose their units after all the others in
+  // each round; among themselves they still go fewest first.
+  //
+  // A city sits out at first: the other counters fight with a limit of 0,
+  // leaving at most one. If that one has 7 or more units, the city becomes
+  // 6 units and a normal resolve runs with the real limit; otherwise
+  // nothing more happens. Engineering on the attacker lowers both numbers
+  // by one (6 to attack, city becomes 5); on the city it raises them by one
+  // (8 to attack, city becomes 7); on both it cancels out.
+  function resolveConflict() {
+    var limit = Math.max(0, parseInt(limitInput.value, 10) || 0);
+    var city = counters.filter(function(c) { return c.city; })[0];
+    var others = counters.filter(function(c) { return c !== city; });
+    if (!city) {
+      resolveRounds(counters, limit);
+    } else {
+      resolveRounds(others, 0);
+      var survivor = others.filter(function(c) { return c.count > 0; })[0];
+      var shift = (city.engineering ? 1 : 0) - (survivor && survivor.engineering ? 1 : 0);
+      if (survivor && survivor.count >= 7 + shift) {
+        city.city = false;
+        city.count = 6 + shift;
+        resolveRounds(counters, limit);
+      }
+    }
+    save();
+    render();
+  }
+
+  function resolveRounds(pool, limit) {
+    function done() {
+      var alive = pool.filter(function(c) { return c.count > 0; });
+      var total = alive.reduce(function(sum, c) { return sum + c.count; }, 0);
+      return alive.length <= 1 || total <= limit;
+    }
+    while (!done()) {
+      var alive = pool.filter(function(c) { return c.count > 0; });
+      // Rank is fixed at the start of the round: Metalworking last, then
+      // fewest units first. Counters with the same rank lose units together.
+      var rank = function(c) {
+        return (c.metalworking ? 1e6 : 0) + c.count;
+      };
+      var ranks = [];
+      alive.forEach(function(c) {
+        if (ranks.indexOf(rank(c)) < 0) ranks.push(rank(c));
+      });
+      ranks.sort(function(a, b) { return a - b; });
+      var groups = ranks.map(function(r) {
+        return alive.filter(function(c) { return rank(c) === r; });
+      });
+      for (var i = 0; i < groups.length && !done(); i++) {
+        groups[i].forEach(function(c) { c.count--; });
+      }
+    }
   }
 
   render();
