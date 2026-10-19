@@ -97,6 +97,16 @@ test.describe('Conflict resolution helper', () => {
     await expect(countOf(page, 0)).toHaveText('1');
   });
 
+  test('only one counter can be a city', async ({ page }) => {
+    await openConflict(page);
+    await counters(page).nth(0).locator('.city-toggle').click();
+    await counters(page).nth(1).locator('.city-toggle').click();
+    await expect(counters(page).nth(0).locator('.city')).not.toBeChecked();
+    await expect(counters(page).nth(1).locator('.city')).toBeChecked();
+    await expect(countOf(page, 0)).toHaveText('0');
+    await expect(countOf(page, 1)).toHaveText('City');
+  });
+
   test('population limit input persists', async ({ page }) => {
     await openConflict(page);
     await page.fill('#pop-limit', '12');

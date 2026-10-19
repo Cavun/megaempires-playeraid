@@ -413,7 +413,13 @@
 
       var city = box.querySelector('.city');
       city.checked = !!c.city;
-      city.addEventListener('change', function() { c.city = city.checked; showCount(); save(); });
+      city.addEventListener('change', function() {
+        // Only one city per conflict: ticking this one unticks any other.
+        if (city.checked) counters.forEach(function(o) { o.city = false; });
+        c.city = city.checked;
+        save();
+        render();
+      });
 
       box.querySelector('.dec').addEventListener('click', function() {
         if (c.count > 0) c.count--;
@@ -454,20 +460,22 @@
   // Counters with Metalworking lose their units after all the others in
   // each round; among themselves they still go fewest first.
   //
-  // City counters sit out at first: the other counters fight with a limit
-  // of 0, leaving at most one. If that one has 7 or more units, each city
-  // becomes 6 units and a normal resolve runs with the real limit.
+  // A city sits out at first: the other counters fight with a limit of 0,
+  // leaving at most one. If that one has 7 or more units, the city becomes
+  // 6 units and a normal resolve runs with the real limit; otherwise
+  // nothing more happens.
   function resolveConflict() {
     var limit = Math.max(0, parseInt(limitInput.value, 10) || 0);
-    var cities = counters.filter(function(c) { return c.city; });
-    var others = counters.filter(function(c) { return !c.city; });
-    if (!cities.length) {
+    var city = counters.filter(function(c) { return c.city; })[0];
+    var others = counters.filter(function(c) { return c !== city; });
+    if (!city) {
       resolveRounds(counters, limit);
     } else {
       resolveRounds(others, 0);
       var survivor = others.filter(function(c) { return c.count > 0; })[0];
       if (survivor && survivor.count >= 7) {
-        cities.forEach(function(c) { c.city = false; c.count = 6; });
+        city.city = false;
+        city.count = 6;
         resolveRounds(counters, limit);
       }
     }
