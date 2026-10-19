@@ -74,4 +74,64 @@ test.describe('Conflict resolution helper', () => {
     await expect(countOf(page, 0)).toHaveText('0');
     await expect(counters(page).nth(0).locator('.label')).toHaveValue('Egypt');
   });
+
+  test('population limit input persists', async ({ page }) => {
+    await openConflict(page);
+    await page.fill('#pop-limit', '12');
+    await page.reload();
+    await expect(page.locator('#pop-limit')).toHaveValue('12');
+  });
+});
+
+test.describe('Resolve', () => {
+  async function setup(page, counts, limit) {
+    await page.goto(PAGE_URL);
+    await page.evaluate(({ counts, limit }) => {
+      localStorage.clear();
+      localStorage.setItem('mega-empires-conflict-counters',
+        JSON.stringify(counts.map((count) => ({ label: '', count }))));
+      localStorage.setItem('mega-empires-conflict-limit', limit);
+    }, { counts, limit });
+    await page.reload();
+    await page.click('#resolve-btn');
+  }
+
+  async function expectCounts(page, expected) {
+    await expect(counters(page).locator('.count')).toHaveText(expected.map(String));
+  }
+
+  test('blank limit removes units until one counter is left', async ({ page }) => {
+    // Round 1: 3->2, then 5->4. Round 2: 2->1, 4->3. Round 3: 1->0, stop.
+    await setup(page, [5, 3], '');
+    await expectCounts(page, [3, 0]);
+  });
+
+  test('lowest loses first and stops once the total meets the limit', async ({ page }) => {
+    // Total 10, limit 8: 2->1 (9), then 3->2 (8), stop before 5.
+    await setup(page, [5, 3, 2], '8');
+    await expectCounts(page, [5, 2, 1]);
+  });
+
+  test('tied counters lose units together', async ({ page }) => {
+    // Total 11, limit 8: the two 3s drop together (9), then 5->4 (8).
+    await setup(page, [3, 5, 3], '8');
+    await expectCounts(page, [2, 4, 2]);
+  });
+
+  test('ties drop together even past the limit', async ({ page }) => {
+    // Total 8, limit 7: both 4s drop at once, ending at 6.
+    await setup(page, [4, 4], '7');
+    await expectCounts(page, [3, 3]);
+  });
+
+  test('zero counters are ignored and nothing changes when already resolved', async ({ page }) => {
+    await setup(page, [0, 4, 2], '6');
+    await expectCounts(page, [0, 4, 2]);
+  });
+
+  test('result is saved', async ({ page }) => {
+    await setup(page, [5, 3, 2], '8');
+    await page.reload();
+    await expectCounts(page, [5, 2, 1]);
+  });
 });

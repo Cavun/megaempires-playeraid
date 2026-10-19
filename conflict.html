@@ -78,6 +78,35 @@
   }
   .tool-btn:hover { border-color: var(--gold); background: rgba(201,168,76,.08); }
 
+  .limit-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .limit-row label {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+  .limit-row input {
+    width: 90px;
+    background: var(--surface);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    text-align: center;
+    padding: 6px 8px;
+  }
+  .limit-row input:focus { outline: none; border-color: var(--gold); }
+
+  .resolve-btn { display: block; width: 100%; margin-top: 20px; padding: 14px 16px; font-size: 14px; }
+
   .counters { display: flex; flex-direction: column; gap: 14px; }
 
   .counter {
@@ -277,16 +306,28 @@
 </header>
 
 <div class="content">
+  <div class="limit-row">
+    <label for="pop-limit">Population Limit</label>
+    <input id="pop-limit" type="number" min="0" inputmode="numeric">
+  </div>
   <div class="toolbar">
     <button class="tool-btn" id="add-btn" onclick="addCounter()">+ Add Counter</button>
     <button class="tool-btn" id="reset-btn" onclick="resetCounts()">Reset Counts</button>
   </div>
   <div class="counters" id="counters"></div>
+  <button class="tool-btn resolve-btn" id="resolve-btn" onclick="resolveConflict()">Resolve</button>
 </div>
 
 <script>
   var STORAGE_KEY = 'mega-empires-conflict-counters';
+  var LIMIT_KEY = 'mega-empires-conflict-limit';
   var counters = load();
+
+  var limitInput = document.getElementById('pop-limit');
+  try { limitInput.value = localStorage.getItem(LIMIT_KEY) || ''; } catch (e) {}
+  limitInput.addEventListener('input', function() {
+    try { localStorage.setItem(LIMIT_KEY, limitInput.value); } catch (e) {}
+  });
 
   function load() {
     try {
@@ -354,6 +395,33 @@
 
   function resetCounts() {
     counters.forEach(function(c) { c.count = 0; });
+    save();
+    render();
+  }
+
+  // Remove units in rounds. Each round, the counter with the fewest units
+  // loses one first, then the next fewest, and so on; tied counters lose
+  // theirs together. Stops as soon as only one counter has units left or
+  // the total is at or below the population limit (blank counts as 0).
+  function resolveConflict() {
+    var limit = Math.max(0, parseInt(limitInput.value, 10) || 0);
+    function done() {
+      var alive = counters.filter(function(c) { return c.count > 0; });
+      var total = alive.reduce(function(sum, c) { return sum + c.count; }, 0);
+      return alive.length <= 1 || total <= limit;
+    }
+    while (!done()) {
+      var levels = [];
+      counters.forEach(function(c) {
+        if (c.count > 0 && levels.indexOf(c.count) < 0) levels.push(c.count);
+      });
+      levels.sort(function(a, b) { return a - b; });
+      for (var i = 0; i < levels.length && !done(); i++) {
+        counters.forEach(function(c) {
+          if (c.count === levels[i]) c.count--;
+        });
+      }
+    }
     save();
     render();
   }
