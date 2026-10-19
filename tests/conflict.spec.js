@@ -84,6 +84,19 @@ test.describe('Conflict resolution helper', () => {
     await expect(counters(page).nth(0).locator('.mw')).not.toBeChecked();
   });
 
+  test('City checkbox shows City instead of the count and hides the tap halves', async ({ page }) => {
+    await openConflict(page);
+    const box = counters(page).nth(0);
+    await box.locator('.half.inc').click();
+    await box.locator('.city-toggle').click();
+    await expect(countOf(page, 0)).toHaveText('City');
+    await expect(box.locator('.half.inc')).toBeHidden();
+    await page.reload();
+    await expect(countOf(page, 0)).toHaveText('City');
+    await counters(page).nth(0).locator('.city-toggle').click();
+    await expect(countOf(page, 0)).toHaveText('1');
+  });
+
   test('population limit input persists', async ({ page }) => {
     await openConflict(page);
     await page.fill('#pop-limit', '12');
@@ -93,13 +106,17 @@ test.describe('Conflict resolution helper', () => {
 });
 
 test.describe('Resolve', () => {
+  // A count of 'city' makes that counter a city.
   async function setup(page, counts, limit, metalworking = []) {
     await page.goto(PAGE_URL);
     await page.evaluate(({ counts, limit, metalworking }) => {
       localStorage.clear();
       localStorage.setItem('mega-empires-conflict-counters',
         JSON.stringify(counts.map((count, i) => ({
-          label: '', count, metalworking: metalworking.includes(i),
+          label: '',
+          count: count === 'city' ? 0 : count,
+          city: count === 'city',
+          metalworking: metalworking.includes(i),
         }))));
       localStorage.setItem('mega-empires-conflict-limit', limit);
     }, { counts, limit, metalworking });
@@ -168,5 +185,32 @@ test.describe('Resolve', () => {
   test('Metalworking on every counter is the same as none', async ({ page }) => {
     await setup(page, [5, 3, 2], '8', [0, 1, 2]);
     await expectCounts(page, [5, 2, 1]);
+  });
+
+  test('with a city, the others fight down to one, ignoring the limit', async ({ page }) => {
+    // Limit 20 would normally stop at once; a city forces a limit of 0.
+    // 3->2, 5->4; 2->1, 4->3; 1->0. 3 is under 7, so the city stands.
+    await setup(page, [5, 3, 'city'], '20');
+    await expectCounts(page, [3, 0, 'City']);
+  });
+
+  test('a survivor with 7 or more turns the city into 6 and resolves again', async ({ page }) => {
+    // 2->1, 10->9; 1->0. 9 >= 7, so the city becomes 6.
+    // Then with limit 12, total 15: 6->5 (14), 9->8 (13), 5->4 (12).
+    await setup(page, [10, 2, 'city'], '12');
+    await expectCounts(page, [8, 0, 4]);
+    await expect(counters(page).nth(2).locator('.city')).not.toBeChecked();
+  });
+
+  test('a lone attacker against a city is checked at once', async ({ page }) => {
+    // 7 >= 7: city becomes 6; limit 13 already met, nothing else changes.
+    await setup(page, ['city', 7], '13');
+    await expectCounts(page, [6, 7]);
+  });
+
+  test('Metalworking still applies once the city has become 6', async ({ page }) => {
+    // City becomes 6 (Metalworking), so the 8 drops first: 8->7 (13), stop.
+    await setup(page, [8, 'city'], '13', [1]);
+    await expectCounts(page, [7, 6]);
   });
 });

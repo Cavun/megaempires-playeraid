@@ -178,9 +178,11 @@
   .counter-foot {
     border-top: 1px solid var(--border);
     padding: 6px 12px;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 24px;
   }
-  .mw-toggle {
+  .toggle {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -191,8 +193,12 @@
     text-transform: uppercase;
     color: var(--muted);
   }
-  .mw-toggle input { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
-  .mw-toggle:has(input:checked) { color: var(--amber); }
+  .toggle input { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+  .toggle:has(input:checked) { color: var(--amber); }
+
+  /* A city has no unit count to tap up or down. */
+  .counter.is-city .half { display: none; }
+  .counter.is-city .count { font-size: 40px; line-height: 1.54; color: var(--amber); }
 
   .remove {
     position: absolute;
@@ -355,7 +361,10 @@
       var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if (Array.isArray(saved)) return saved;
     } catch (e) {}
-    return [{ label: '', count: 0, metalworking: false }, { label: '', count: 0, metalworking: false }];
+    return [
+      { label: '', count: 0, metalworking: false, city: false },
+      { label: '', count: 0, metalworking: false, city: false }
+    ];
   }
 
   function save() {
@@ -382,12 +391,17 @@
           '</div>' +
         '</div>' +
         '<div class="counter-foot">' +
-          '<label class="mw-toggle"><input class="mw" type="checkbox"> Metalworking</label>' +
+          '<label class="toggle mw-toggle"><input class="mw" type="checkbox"> Metalworking</label>' +
+          '<label class="toggle city-toggle"><input class="city" type="checkbox"> City</label>' +
         '</div>' +
         '<button class="remove" aria-label="Remove counter">×</button>';
 
       var countEl = box.querySelector('.count');
-      countEl.textContent = c.count;
+      function showCount() {
+        box.classList.toggle('is-city', !!c.city);
+        countEl.textContent = c.city ? 'City' : c.count;
+      }
+      showCount();
 
       var label = box.querySelector('.label');
       label.value = c.label;
@@ -396,6 +410,10 @@
       var mw = box.querySelector('.mw');
       mw.checked = !!c.metalworking;
       mw.addEventListener('change', function() { c.metalworking = mw.checked; save(); });
+
+      var city = box.querySelector('.city');
+      city.checked = !!c.city;
+      city.addEventListener('change', function() { c.city = city.checked; showCount(); save(); });
 
       box.querySelector('.dec').addEventListener('click', function() {
         if (c.count > 0) c.count--;
@@ -418,7 +436,7 @@
   }
 
   function addCounter() {
-    counters.push({ label: '', count: 0, metalworking: false });
+    counters.push({ label: '', count: 0, metalworking: false, city: false });
     save();
     render();
   }
@@ -435,15 +453,36 @@
   // the total is at or below the population limit (blank counts as 0).
   // Counters with Metalworking lose their units after all the others in
   // each round; among themselves they still go fewest first.
+  //
+  // City counters sit out at first: the other counters fight with a limit
+  // of 0, leaving at most one. If that one has 7 or more units, each city
+  // becomes 6 units and a normal resolve runs with the real limit.
   function resolveConflict() {
     var limit = Math.max(0, parseInt(limitInput.value, 10) || 0);
+    var cities = counters.filter(function(c) { return c.city; });
+    var others = counters.filter(function(c) { return !c.city; });
+    if (!cities.length) {
+      resolveRounds(counters, limit);
+    } else {
+      resolveRounds(others, 0);
+      var survivor = others.filter(function(c) { return c.count > 0; })[0];
+      if (survivor && survivor.count >= 7) {
+        cities.forEach(function(c) { c.city = false; c.count = 6; });
+        resolveRounds(counters, limit);
+      }
+    }
+    save();
+    render();
+  }
+
+  function resolveRounds(pool, limit) {
     function done() {
-      var alive = counters.filter(function(c) { return c.count > 0; });
+      var alive = pool.filter(function(c) { return c.count > 0; });
       var total = alive.reduce(function(sum, c) { return sum + c.count; }, 0);
       return alive.length <= 1 || total <= limit;
     }
     while (!done()) {
-      var alive = counters.filter(function(c) { return c.count > 0; });
+      var alive = pool.filter(function(c) { return c.count > 0; });
       // Rank is fixed at the start of the round: Metalworking last, then
       // fewest units first. Counters with the same rank lose units together.
       var rank = function(c) {
@@ -461,8 +500,6 @@
         groups[i].forEach(function(c) { c.count--; });
       }
     }
-    save();
-    render();
   }
 
   render();
