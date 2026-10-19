@@ -123,6 +123,8 @@
 
   /* The two tap halves fill the whole box; the label, count and remove
      button sit above them. Only the label and remove button take clicks. */
+  .tap-area { position: relative; }
+
   .half {
     position: absolute;
     top: 0;
@@ -172,6 +174,25 @@
     color: var(--text);
     line-height: 1.1;
   }
+
+  .counter-foot {
+    border-top: 1px solid var(--border);
+    padding: 6px 12px;
+    text-align: center;
+  }
+  .mw-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mw-toggle input { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+  .mw-toggle:has(input:checked) { color: var(--amber); }
 
   .remove {
     position: absolute;
@@ -334,7 +355,7 @@
       var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       if (Array.isArray(saved)) return saved;
     } catch (e) {}
-    return [{ label: '', count: 0 }, { label: '', count: 0 }];
+    return [{ label: '', count: 0, metalworking: false }, { label: '', count: 0, metalworking: false }];
   }
 
   function save() {
@@ -352,11 +373,16 @@
       var box = document.createElement('div');
       box.className = 'counter';
       box.innerHTML =
-        '<button class="half dec" aria-label="Decrease">−</button>' +
-        '<button class="half inc" aria-label="Increase">+</button>' +
-        '<div class="counter-body">' +
-          '<input class="label" type="text" placeholder="Label" maxlength="30">' +
-          '<div class="count"></div>' +
+        '<div class="tap-area">' +
+          '<button class="half dec" aria-label="Decrease">−</button>' +
+          '<button class="half inc" aria-label="Increase">+</button>' +
+          '<div class="counter-body">' +
+            '<input class="label" type="text" placeholder="Label" maxlength="30">' +
+            '<div class="count"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="counter-foot">' +
+          '<label class="mw-toggle"><input class="mw" type="checkbox"> Metalworking</label>' +
         '</div>' +
         '<button class="remove" aria-label="Remove counter">×</button>';
 
@@ -366,6 +392,10 @@
       var label = box.querySelector('.label');
       label.value = c.label;
       label.addEventListener('input', function() { c.label = label.value; save(); });
+
+      var mw = box.querySelector('.mw');
+      mw.checked = !!c.metalworking;
+      mw.addEventListener('change', function() { c.metalworking = mw.checked; save(); });
 
       box.querySelector('.dec').addEventListener('click', function() {
         if (c.count > 0) c.count--;
@@ -388,7 +418,7 @@
   }
 
   function addCounter() {
-    counters.push({ label: '', count: 0 });
+    counters.push({ label: '', count: 0, metalworking: false });
     save();
     render();
   }
@@ -403,6 +433,9 @@
   // loses one first, then the next fewest, and so on; tied counters lose
   // theirs together. Stops as soon as only one counter has units left or
   // the total is at or below the population limit (blank counts as 0).
+  // A counter with Metalworking loses its units after all the others in
+  // each round, unless another counter still in the conflict has it too,
+  // in which case it has no effect.
   function resolveConflict() {
     var limit = Math.max(0, parseInt(limitInput.value, 10) || 0);
     function done() {
@@ -411,15 +444,23 @@
       return alive.length <= 1 || total <= limit;
     }
     while (!done()) {
-      var levels = [];
-      counters.forEach(function(c) {
-        if (c.count > 0 && levels.indexOf(c.count) < 0) levels.push(c.count);
+      var alive = counters.filter(function(c) { return c.count > 0; });
+      var mwCount = alive.filter(function(c) { return c.metalworking; }).length;
+      // Rank is fixed at the start of the round: Metalworking last, then
+      // fewest units first. Counters with the same rank lose units together.
+      var rank = function(c) {
+        return (c.metalworking && mwCount === 1 ? 1e6 : 0) + c.count;
+      };
+      var ranks = [];
+      alive.forEach(function(c) {
+        if (ranks.indexOf(rank(c)) < 0) ranks.push(rank(c));
       });
-      levels.sort(function(a, b) { return a - b; });
-      for (var i = 0; i < levels.length && !done(); i++) {
-        counters.forEach(function(c) {
-          if (c.count === levels[i]) c.count--;
-        });
+      ranks.sort(function(a, b) { return a - b; });
+      var groups = ranks.map(function(r) {
+        return alive.filter(function(c) { return rank(c) === r; });
+      });
+      for (var i = 0; i < groups.length && !done(); i++) {
+        groups[i].forEach(function(c) { c.count--; });
       }
     }
     save();

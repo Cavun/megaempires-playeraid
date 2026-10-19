@@ -21,7 +21,7 @@ test.describe('Conflict resolution helper', () => {
 
   test('right half increments, left half decrements, never below zero', async ({ page }) => {
     await openConflict(page);
-    const box = counters(page).nth(0);
+    const box = counters(page).nth(0).locator('.tap-area');
     const b = await box.boundingBox();
     await page.mouse.click(b.x + b.width * 0.9, b.y + b.height * 0.8);
     await page.mouse.click(b.x + b.width * 0.9, b.y + b.height * 0.8);
@@ -75,6 +75,15 @@ test.describe('Conflict resolution helper', () => {
     await expect(counters(page).nth(0).locator('.label')).toHaveValue('Egypt');
   });
 
+  test('Metalworking checkbox persists and does not change the count', async ({ page }) => {
+    await openConflict(page);
+    await counters(page).nth(1).locator('.mw-toggle').click();
+    await expect(countOf(page, 1)).toHaveText('0');
+    await page.reload();
+    await expect(counters(page).nth(1).locator('.mw')).toBeChecked();
+    await expect(counters(page).nth(0).locator('.mw')).not.toBeChecked();
+  });
+
   test('population limit input persists', async ({ page }) => {
     await openConflict(page);
     await page.fill('#pop-limit', '12');
@@ -84,14 +93,16 @@ test.describe('Conflict resolution helper', () => {
 });
 
 test.describe('Resolve', () => {
-  async function setup(page, counts, limit) {
+  async function setup(page, counts, limit, metalworking = []) {
     await page.goto(PAGE_URL);
-    await page.evaluate(({ counts, limit }) => {
+    await page.evaluate(({ counts, limit, metalworking }) => {
       localStorage.clear();
       localStorage.setItem('mega-empires-conflict-counters',
-        JSON.stringify(counts.map((count) => ({ label: '', count }))));
+        JSON.stringify(counts.map((count, i) => ({
+          label: '', count, metalworking: metalworking.includes(i),
+        }))));
       localStorage.setItem('mega-empires-conflict-limit', limit);
-    }, { counts, limit });
+    }, { counts, limit, metalworking });
     await page.reload();
     await page.click('#resolve-btn');
   }
@@ -133,5 +144,29 @@ test.describe('Resolve', () => {
     await setup(page, [5, 3, 2], '8');
     await page.reload();
     await expectCounts(page, [5, 2, 1]);
+  });
+
+  test('Metalworking counter loses units after the others', async ({ page }) => {
+    // Total 10, limit 7: the 2 has Metalworking, so 3->2 (9), 5->4 (8),
+    // then 2->1 (7).
+    await setup(page, [5, 3, 2], '7', [2]);
+    await expectCounts(page, [4, 2, 1]);
+  });
+
+  test('Metalworking stops before its counter is touched once the limit is met', async ({ page }) => {
+    // Total 6, limit 5: the 4 drops first even though the 2 is lower.
+    await setup(page, [4, 2], '5', [1]);
+    await expectCounts(page, [3, 2]);
+  });
+
+  test('Metalworking on two counters cancels out', async ({ page }) => {
+    // Same as without Metalworking: 2->1 (9), then 3->2 (8).
+    await setup(page, [5, 3, 2], '8', [1, 2]);
+    await expectCounts(page, [5, 2, 1]);
+  });
+
+  test('Metalworking on an eliminated counter does not cancel another', async ({ page }) => {
+    await setup(page, [0, 4, 2], '5', [0, 2]);
+    await expectCounts(page, [0, 3, 2]);
   });
 });
