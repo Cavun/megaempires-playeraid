@@ -107,6 +107,14 @@ test.describe('Conflict resolution helper', () => {
     await expect(countOf(page, 1)).toHaveText('City');
   });
 
+  test('Engineering checkbox persists', async ({ page }) => {
+    await openConflict(page);
+    await counters(page).nth(0).locator('.eng-toggle').click();
+    await page.reload();
+    await expect(counters(page).nth(0).locator('.eng')).toBeChecked();
+    await expect(counters(page).nth(1).locator('.eng')).not.toBeChecked();
+  });
+
   test('population limit input persists', async ({ page }) => {
     await openConflict(page);
     await page.fill('#pop-limit', '12');
@@ -117,9 +125,9 @@ test.describe('Conflict resolution helper', () => {
 
 test.describe('Resolve', () => {
   // A count of 'city' makes that counter a city.
-  async function setup(page, counts, limit, metalworking = []) {
+  async function setup(page, counts, limit, metalworking = [], engineering = []) {
     await page.goto(PAGE_URL);
-    await page.evaluate(({ counts, limit, metalworking }) => {
+    await page.evaluate(({ counts, limit, metalworking, engineering }) => {
       localStorage.clear();
       localStorage.setItem('mega-empires-conflict-counters',
         JSON.stringify(counts.map((count, i) => ({
@@ -127,9 +135,10 @@ test.describe('Resolve', () => {
           count: count === 'city' ? 0 : count,
           city: count === 'city',
           metalworking: metalworking.includes(i),
+          engineering: engineering.includes(i),
         }))));
       localStorage.setItem('mega-empires-conflict-limit', limit);
-    }, { counts, limit, metalworking });
+    }, { counts, limit, metalworking, engineering });
     await page.reload();
     await page.click('#resolve-btn');
   }
@@ -222,5 +231,35 @@ test.describe('Resolve', () => {
     // City becomes 6 (Metalworking), so the 8 drops first: 8->7 (13), stop.
     await setup(page, [8, 'city'], '13', [1]);
     await expectCounts(page, [7, 6]);
+  });
+
+  test('attacker with Engineering needs only 6 and the city becomes 5', async ({ page }) => {
+    await setup(page, [6, 'city'], '20', [], [0]);
+    await expectCounts(page, [6, 5]);
+  });
+
+  test('attacker without Engineering cannot take a city with 6', async ({ page }) => {
+    await setup(page, [6, 'city'], '20');
+    await expectCounts(page, [6, 'City']);
+  });
+
+  test('city with Engineering needs 8 and becomes 7', async ({ page }) => {
+    await setup(page, [7, 'city'], '20', [], [1]);
+    await expectCounts(page, [7, 'City']);
+    await setup(page, [8, 'city'], '20', [], [1]);
+    await expectCounts(page, [8, 7]);
+  });
+
+  test('Engineering on both sides is the same as neither', async ({ page }) => {
+    await setup(page, [6, 'city'], '20', [], [0, 1]);
+    await expectCounts(page, [6, 'City']);
+    await setup(page, [7, 'city'], '20', [], [0, 1]);
+    await expectCounts(page, [7, 6]);
+  });
+
+  test('only the surviving attacker\'s Engineering counts', async ({ page }) => {
+    // The 2 has Engineering but is wiped out; the 6 survives without it.
+    await setup(page, [7, 2, 'city'], '20', [], [1]);
+    await expectCounts(page, [6, 0, 'City']);
   });
 });

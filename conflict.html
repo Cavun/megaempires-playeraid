@@ -179,8 +179,9 @@
     border-top: 1px solid var(--border);
     padding: 6px 12px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 24px;
+    gap: 4px 18px;
   }
   .toggle {
     display: inline-flex;
@@ -362,8 +363,8 @@
       if (Array.isArray(saved)) return saved;
     } catch (e) {}
     return [
-      { label: '', count: 0, metalworking: false, city: false },
-      { label: '', count: 0, metalworking: false, city: false }
+      { label: '', count: 0, metalworking: false, engineering: false, city: false },
+      { label: '', count: 0, metalworking: false, engineering: false, city: false }
     ];
   }
 
@@ -392,6 +393,7 @@
         '</div>' +
         '<div class="counter-foot">' +
           '<label class="toggle mw-toggle"><input class="mw" type="checkbox"> Metalworking</label>' +
+          '<label class="toggle eng-toggle"><input class="eng" type="checkbox"> Engineering</label>' +
           '<label class="toggle city-toggle"><input class="city" type="checkbox"> City</label>' +
         '</div>' +
         '<button class="remove" aria-label="Remove counter">×</button>';
@@ -410,6 +412,10 @@
       var mw = box.querySelector('.mw');
       mw.checked = !!c.metalworking;
       mw.addEventListener('change', function() { c.metalworking = mw.checked; save(); });
+
+      var eng = box.querySelector('.eng');
+      eng.checked = !!c.engineering;
+      eng.addEventListener('change', function() { c.engineering = eng.checked; save(); });
 
       var city = box.querySelector('.city');
       city.checked = !!c.city;
@@ -442,7 +448,7 @@
   }
 
   function addCounter() {
-    counters.push({ label: '', count: 0, metalworking: false, city: false });
+    counters.push({ label: '', count: 0, metalworking: false, engineering: false, city: false });
     save();
     render();
   }
@@ -463,7 +469,9 @@
   // A city sits out at first: the other counters fight with a limit of 0,
   // leaving at most one. If that one has 7 or more units, the city becomes
   // 6 units and a normal resolve runs with the real limit; otherwise
-  // nothing more happens.
+  // nothing more happens. Engineering on the attacker lowers both numbers
+  // by one (6 to attack, city becomes 5); on the city it raises them by one
+  // (8 to attack, city becomes 7); on both it cancels out.
   function resolveConflict() {
     var limit = Math.max(0, parseInt(limitInput.value, 10) || 0);
     var city = counters.filter(function(c) { return c.city; })[0];
@@ -473,9 +481,10 @@
     } else {
       resolveRounds(others, 0);
       var survivor = others.filter(function(c) { return c.count > 0; })[0];
-      if (survivor && survivor.count >= 7) {
+      var shift = (city.engineering ? 1 : 0) - (survivor && survivor.engineering ? 1 : 0);
+      if (survivor && survivor.count >= 7 + shift) {
         city.city = false;
-        city.count = 6;
+        city.count = 6 + shift;
         resolveRounds(counters, limit);
       }
     }
