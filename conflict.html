@@ -433,9 +433,8 @@
   // loses one first, then the next fewest, and so on; tied counters lose
   // theirs together. Stops as soon as only one counter has units left or
   // the total is at or below the population limit (blank counts as 0).
-  // A counter with Metalworking loses its units after all the others in
-  // each round, unless another counter still in the conflict has it too,
-  // in which case it has no effect.
+  // Counters with Metalworking lose their units after all the others in
+  // each round; among themselves they still go fewest first.
   function resolveConflict() {
     var limit = Math.max(0, parseInt(limitInput.value, 10) || 0);
     function done() {
@@ -445,11 +444,10 @@
     }
     while (!done()) {
       var alive = counters.filter(function(c) { return c.count > 0; });
-      var mwCount = alive.filter(function(c) { return c.metalworking; }).length;
       // Rank is fixed at the start of the round: Metalworking last, then
       // fewest units first. Counters with the same rank lose units together.
       var rank = function(c) {
-        return (c.metalworking && mwCount === 1 ? 1e6 : 0) + c.count;
+        return (c.metalworking ? 1e6 : 0) + c.count;
       };
       var ranks = [];
       alive.forEach(function(c) {

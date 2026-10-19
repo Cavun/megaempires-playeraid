@@ -159,14 +159,14 @@ test.describe('Resolve', () => {
     await expectCounts(page, [3, 2]);
   });
 
-  test('Metalworking on two counters cancels out', async ({ page }) => {
-    // Same as without Metalworking: 2->1 (9), then 3->2 (8).
-    await setup(page, [5, 3, 2], '8', [1, 2]);
-    await expectCounts(page, [5, 2, 1]);
+  test('two Metalworking counters go after the third, fewest first', async ({ page }) => {
+    // Total 10, limit 7: 5->4 (9), then the Metalworking 2->1 (8), then 3->2 (7).
+    await setup(page, [5, 3, 2], '7', [1, 2]);
+    await expectCounts(page, [4, 2, 1]);
   });
 
-  test('Metalworking on an eliminated counter does not cancel another', async ({ page }) => {
-    await setup(page, [0, 4, 2], '5', [0, 2]);
-    await expectCounts(page, [0, 3, 2]);
+  test('Metalworking on every counter is the same as none', async ({ page }) => {
+    await setup(page, [5, 3, 2], '8', [0, 1, 2]);
+    await expectCounts(page, [5, 2, 1]);
   });
 });
