@@ -11,7 +11,7 @@
  * players must be chosen from the same block as the primary victim.
  * Tradeable calamities may draw from either block.
  *
- * Loaded by censusandcityhelper.html and calamities.html so the
+ * Loaded by censusandcityhelper.html, calamities.html and conflict.html so the
  * roster only has to be maintained in one place.
  */
 var MEGA_EMPIRES_CIVS = [

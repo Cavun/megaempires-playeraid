@@ -45,9 +45,34 @@ test.describe('Conflict resolution helper', () => {
     await expect(count).toHaveText('1');
   });
 
-  test('typing a label does not change the count', async ({ page }) => {
+  test('label dropdown lists only the civs in play', async ({ page }) => {
+    await page.goto(PAGE_URL);
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('mega-empires-not-in-game', JSON.stringify([{ ast: 17 }]));
+    });
+    await page.reload();
+    const options = counters(page).nth(0).locator('.label option');
+    await expect(options).toHaveCount(18);
+    await expect(options.nth(0)).toHaveText('Civ');
+    await expect(options.nth(1)).toHaveText('Minoa');
+    await expect(options.filter({ hasText: 'Egypt' })).toHaveCount(0);
+  });
+
+  test('a saved civ taken out of play stays selected', async ({ page }) => {
     await openConflict(page);
-    await counters(page).nth(0).locator('.label').fill('Egypt');
+    await counters(page).nth(0).locator('.label').selectOption('Egypt');
+    await page.evaluate(() => {
+      localStorage.setItem('mega-empires-not-in-game', JSON.stringify([{ ast: 17 }]));
+    });
+    await page.reload();
+    await expect(counters(page).nth(0).locator('.label')).toHaveValue('Egypt');
+    await expect(counters(page).nth(1).locator('.label option', { hasText: 'Egypt' })).toHaveCount(0);
+  });
+
+  test('choosing a label does not change the count', async ({ page }) => {
+    await openConflict(page);
+    await counters(page).nth(0).locator('.label').selectOption('Egypt');
     await expect(countOf(page, 0)).toHaveText('0');
   });
 
@@ -55,8 +80,8 @@ test.describe('Conflict resolution helper', () => {
     await openConflict(page);
     await page.click('#add-btn');
     await expect(counters(page)).toHaveCount(3);
-    await counters(page).nth(0).locator('.label').fill('Egypt');
-    await counters(page).nth(1).locator('.label').fill('Babylon');
+    await counters(page).nth(0).locator('.label').selectOption('Egypt');
+    await counters(page).nth(1).locator('.label').selectOption('Babylon');
     await counters(page).nth(0).locator('.remove').click();
     await expect(counters(page)).toHaveCount(2);
     await expect(counters(page).nth(0).locator('.label')).toHaveValue('Babylon');
@@ -64,7 +89,7 @@ test.describe('Conflict resolution helper', () => {
 
   test('labels and counts persist, and reset zeroes counts but keeps labels', async ({ page }) => {
     await openConflict(page);
-    await counters(page).nth(0).locator('.label').fill('Egypt');
+    await counters(page).nth(0).locator('.label').selectOption('Egypt');
     await counters(page).nth(0).locator('.half.inc').click();
     await counters(page).nth(0).locator('.half.inc').click();
     await page.reload();
@@ -117,9 +142,11 @@ test.describe('Conflict resolution helper', () => {
 
   test('population limit input persists', async ({ page }) => {
     await openConflict(page);
-    await page.fill('#pop-limit', '12');
+    await expect(page.locator('#pop-limit')).toHaveValue('0');
+    await expect(page.locator('#pop-limit option')).toHaveText(['0', '1', '2', '3', '4']);
+    await page.selectOption('#pop-limit', '3');
     await page.reload();
-    await expect(page.locator('#pop-limit')).toHaveValue('12');
+    await expect(page.locator('#pop-limit')).toHaveValue('3');
   });
 });
 
@@ -147,119 +174,121 @@ test.describe('Resolve', () => {
     await expect(counters(page).locator('.count')).toHaveText(expected.map(String));
   }
 
-  test('blank limit removes units until one counter is left', async ({ page }) => {
+  test('limit 0 removes units until one counter is left', async ({ page }) => {
     // Round 1: 3->2, then 5->4. Round 2: 2->1, 4->3. Round 3: 1->0, stop.
-    await setup(page, [5, 3], '');
+    await setup(page, [5, 3], '0');
     await expectCounts(page, [3, 0]);
   });
 
   test('lowest loses first and stops once the total meets the limit', async ({ page }) => {
-    // Total 10, limit 8: 2->1 (9), then 3->2 (8), stop before 5.
-    await setup(page, [5, 3, 2], '8');
-    await expectCounts(page, [5, 2, 1]);
+    // Total 6, limit 4: 1->0 (5), then 2->1 (4), stop before 3.
+    await setup(page, [3, 2, 1], '4');
+    await expectCounts(page, [3, 1, 0]);
   });
 
   test('tied counters lose units together', async ({ page }) => {
-    // Total 11, limit 8: the two 3s drop together (9), then 5->4 (8).
-    await setup(page, [3, 5, 3], '8');
-    await expectCounts(page, [2, 4, 2]);
+    // Total 7, limit 4: the two 2s drop together (5), then 3->2 (4).
+    await setup(page, [2, 3, 2], '4');
+    await expectCounts(page, [1, 2, 1]);
   });
 
   test('ties drop together even past the limit', async ({ page }) => {
-    // Total 8, limit 7: both 4s drop at once, ending at 6.
-    await setup(page, [4, 4], '7');
-    await expectCounts(page, [3, 3]);
+    // Total 4, limit 3: both 2s drop at once, ending at 2.
+    await setup(page, [2, 2], '3');
+    await expectCounts(page, [1, 1]);
   });
 
   test('zero counters are ignored and nothing changes when already resolved', async ({ page }) => {
-    await setup(page, [0, 4, 2], '6');
-    await expectCounts(page, [0, 4, 2]);
+    await setup(page, [0, 3, 1], '4');
+    await expectCounts(page, [0, 3, 1]);
   });
 
   test('result is saved', async ({ page }) => {
-    await setup(page, [5, 3, 2], '8');
+    await setup(page, [3, 2, 1], '4');
     await page.reload();
-    await expectCounts(page, [5, 2, 1]);
+    await expectCounts(page, [3, 1, 0]);
   });
 
   test('Metalworking counter loses units after the others', async ({ page }) => {
-    // Total 10, limit 7: the 2 has Metalworking, so 3->2 (9), 5->4 (8),
-    // then 2->1 (7).
-    await setup(page, [5, 3, 2], '7', [2]);
-    await expectCounts(page, [4, 2, 1]);
+    // Total 6, limit 4: the 1 has Metalworking, so 2->1 (5), 3->2 (4).
+    await setup(page, [3, 2, 1], '4', [2]);
+    await expectCounts(page, [2, 1, 1]);
   });
 
   test('Metalworking stops before its counter is touched once the limit is met', async ({ page }) => {
-    // Total 6, limit 5: the 4 drops first even though the 2 is lower.
-    await setup(page, [4, 2], '5', [1]);
-    await expectCounts(page, [3, 2]);
+    // Total 4, limit 3: the 3 drops first even though the 1 is lower.
+    await setup(page, [3, 1], '3', [1]);
+    await expectCounts(page, [2, 1]);
   });
 
   test('two Metalworking counters go after the third, fewest first', async ({ page }) => {
-    // Total 10, limit 7: 5->4 (9), then the Metalworking 2->1 (8), then 3->2 (7).
-    await setup(page, [5, 3, 2], '7', [1, 2]);
-    await expectCounts(page, [4, 2, 1]);
+    // Total 6, limit 4: 3->2 (5), then the Metalworking 1->0 (4).
+    await setup(page, [3, 2, 1], '4', [1, 2]);
+    await expectCounts(page, [2, 2, 0]);
   });
 
   test('Metalworking on every counter is the same as none', async ({ page }) => {
-    await setup(page, [5, 3, 2], '8', [0, 1, 2]);
-    await expectCounts(page, [5, 2, 1]);
+    await setup(page, [3, 2, 1], '4', [0, 1, 2]);
+    await expectCounts(page, [3, 1, 0]);
   });
 
   test('with a city, the others fight down to one, ignoring the limit', async ({ page }) => {
-    // Limit 20 would normally stop at once; a city forces a limit of 0.
+    // Limit 4 would stop early; a city forces a limit of 0.
     // 3->2, 5->4; 2->1, 4->3; 1->0. 3 is under 7, so the city stands.
-    await setup(page, [5, 3, 'city'], '20');
+    await setup(page, [5, 3, 'city'], '4');
     await expectCounts(page, [3, 0, 'City']);
   });
 
   test('a survivor with 7 or more turns the city into 6 and resolves again', async ({ page }) => {
     // 2->1, 10->9; 1->0. 9 >= 7, so the city becomes 6.
-    // Then with limit 12, total 15: 6->5 (14), 9->8 (13), 5->4 (12).
-    await setup(page, [10, 2, 'city'], '12');
-    await expectCounts(page, [8, 0, 4]);
+    // Then 9 vs 6 with limit 4: both drop each round until the 6 is gone.
+    await setup(page, [10, 2, 'city'], '4');
+    await expectCounts(page, [4, 0, 0]);
     await expect(counters(page).nth(2).locator('.city')).not.toBeChecked();
   });
 
-  test('a lone attacker against a city is checked at once', async ({ page }) => {
-    // 7 >= 7: city becomes 6; limit 13 already met, nothing else changes.
-    await setup(page, ['city', 7], '13');
-    await expectCounts(page, [6, 7]);
+  test('a lone attacker against a city stops at the limit', async ({ page }) => {
+    // City becomes 6; 7 vs 6 with limit 4 ends at 3 and 1.
+    await setup(page, ['city', 7], '4');
+    await expectCounts(page, [1, 3]);
   });
 
   test('Metalworking still applies once the city has become 6', async ({ page }) => {
-    // City becomes 6 (Metalworking), so the 8 drops first: 8->7 (13), stop.
-    await setup(page, [8, 'city'], '13', [1]);
-    await expectCounts(page, [7, 6]);
+    // 8 vs a Metalworking 6, limit 3: the 8 always drops first, ending 2 and 1.
+    // (Without Metalworking it would end 3 and 0.)
+    await setup(page, [8, 'city'], '3', [1]);
+    await expectCounts(page, [2, 1]);
   });
 
+  // With limit 0 the attacker ends with (attacker - city + 1) units, which
+  // shows what the city became.
   test('attacker with Engineering needs only 6 and the city becomes 5', async ({ page }) => {
-    await setup(page, [6, 'city'], '20', [], [0]);
-    await expectCounts(page, [6, 5]);
+    await setup(page, [6, 'city'], '0', [], [0]);
+    await expectCounts(page, [2, 0]);
   });
 
   test('attacker without Engineering cannot take a city with 6', async ({ page }) => {
-    await setup(page, [6, 'city'], '20');
+    await setup(page, [6, 'city'], '0');
     await expectCounts(page, [6, 'City']);
   });
 
   test('city with Engineering needs 8 and becomes 7', async ({ page }) => {
-    await setup(page, [7, 'city'], '20', [], [1]);
+    await setup(page, [7, 'city'], '0', [], [1]);
     await expectCounts(page, [7, 'City']);
-    await setup(page, [8, 'city'], '20', [], [1]);
-    await expectCounts(page, [8, 7]);
+    await setup(page, [8, 'city'], '0', [], [1]);
+    await expectCounts(page, [2, 0]);
   });
 
   test('Engineering on both sides is the same as neither', async ({ page }) => {
-    await setup(page, [6, 'city'], '20', [], [0, 1]);
+    await setup(page, [6, 'city'], '0', [], [0, 1]);
     await expectCounts(page, [6, 'City']);
-    await setup(page, [7, 'city'], '20', [], [0, 1]);
-    await expectCounts(page, [7, 6]);
+    await setup(page, [7, 'city'], '0', [], [0, 1]);
+    await expectCounts(page, [2, 0]);
   });
 
   test('only the surviving attacker\'s Engineering counts', async ({ page }) => {
     // The 2 has Engineering but is wiped out; the 6 survives without it.
-    await setup(page, [7, 2, 'city'], '20', [], [1]);
+    await setup(page, [7, 2, 'city'], '4', [], [1]);
     await expectCounts(page, [6, 0, 'City']);
   });
 });
