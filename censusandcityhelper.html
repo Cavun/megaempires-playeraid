@@ -18,6 +18,8 @@
     --red:       #c0402a;
     --green:     #3a6a30;
     --blue:      #2a5070;
+    --census-line: #2a5070;
+    --cities-line: #c0602a;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -394,6 +396,31 @@
     opacity: .8;
     margin-left: 6px;
   }
+  /* Game report */
+  .report-section { margin-top: 48px; }
+  .report-status { font-size: 15px; color: var(--muted); margin-bottom: 12px; }
+  .report-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .report-actions .reset-btn.secondary { background: transparent; color: var(--gold); }
+  .report-actions .reset-btn.secondary:hover { background: rgba(176,138,64,.12); }
+  #report { display: none; margin-top: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 16px; }
+  #report.visible { display: block; }
+  .report-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .report-controls label { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); }
+  #report-civ { font-family: 'Cinzel', serif; font-size: 14px; color: var(--amber); background: #fff; border: 1px solid var(--border); border-radius: 3px; padding: 6px 8px; }
+  .report-legend { display: flex; gap: 18px; margin-left: auto; font-size: 14px; color: var(--text); }
+  .report-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .report-legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
+  .report-legend i.dashed { border-top-style: dashed; }
+  .chart-wrap { position: relative; }
+  #report-chart { width: 100%; height: auto; display: block; }
+  #report-chart text { font-family: 'Crimson Pro', Georgia, serif; font-size: 13px; fill: var(--muted); }
+  #report-chart text.axis-title { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: .12em; }
+  #report-chart .grid { stroke: var(--border); stroke-width: 1; }
+  #report-chart .axis { stroke: var(--gold-dim); stroke-width: 1; }
+  #report-chart .crosshair { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart-tooltip { position: absolute; pointer-events: none; display: none; background: var(--text); color: #fff; font-size: 14px; line-height: 1.35; padding: 6px 10px; border-radius: 3px; white-space: nowrap; transform: translate(-50%, -100%); }
+  .chart-tooltip b { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: .06em; }
+  .report-empty { color: var(--muted); font-style: italic; }
 </style>
 </head>
 <body>
@@ -485,6 +512,30 @@
       <tbody id="removed-tbody"></tbody>
     </table>
     </div><!-- /.table-scroll -->
+  </div>
+
+  <!-- Game report: census/city counts recorded each turn -->
+  <div class="report-section" id="report-section">
+    <p class="section-label">Game Report</p>
+    <p class="report-status" id="report-status"></p>
+    <div class="report-actions">
+      <button class="reset-btn" id="report-btn" onclick="showReport()">Generate Report</button>
+      <button class="reset-btn secondary" id="clear-stats-btn" onclick="clearStats()">Clear Stats</button>
+    </div>
+    <div id="report">
+      <div class="report-controls">
+        <label for="report-civ">Civ</label>
+        <select id="report-civ" onchange="renderChart()"></select>
+        <div class="report-legend">
+          <span><i style="border-color:var(--census-line)"></i>Census</span>
+          <span><i class="dashed" style="border-color:var(--cities-line)"></i>Cities</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <svg id="report-chart" role="img"></svg>
+        <div class="chart-tooltip" id="chart-tooltip"></div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -679,12 +730,12 @@
 
   function onCensusInput(e) {
     var row = e.target.closest('tr');
-    if (row) { row.classList.add('updated'); checkAllUpdated(); }
+    if (row) { row.dataset.entered = '1'; row.classList.add('updated'); checkAllUpdated(); }
   }
 
   function onCityInput(e) {
     var row = e.target.closest('tr');
-    if (row) { row.classList.add('updated'); checkAllCityUpdated(); }
+    if (row) { row.dataset.entered = '1'; row.classList.add('updated'); checkAllCityUpdated(); }
   }
 
   function bindCensusInputs() {
@@ -707,6 +758,7 @@
     bindCityInputs();
     checkAllUpdated();
     checkAllCityUpdated();
+    updateReportStatus();
 
     // Restore saved timer value
     var savedTimer = localStorage.getItem('mega-empires-timer');
@@ -719,6 +771,7 @@
   });
 
   function sortTable() {
+    recordTurn('census', '#active-tbody tr');
     var tbody = document.getElementById('active-tbody');
     var rows = Array.from(tbody.querySelectorAll('tr'));
     rows.sort(function(a, b) {
@@ -737,6 +790,7 @@
   }
 
   function sortCityTable() {
+    recordTurn('cities', '#cities-tbody tr');
     var tbody = document.getElementById('cities-tbody');
     var rows = Array.from(tbody.querySelectorAll('tr'));
     rows.sort(function(a, b) {
@@ -750,6 +804,208 @@
       tbody.appendChild(r);
     });
   }
+
+  /* --- Stat tracking ------------------------------------------------------
+   * Each time every row of a table has been filled in and the table is
+   * sorted, its values are saved as the next turn for that table:
+   *   { census: [{ turn: 1, values: { "<ast>": { name, value } } }, ...],
+   *     cities: [ ...same shape... ] }
+   * Census and cities count their turns separately, both starting at 1.
+   */
+  var STATS_KEY = 'mega-empires-stats';
+  var CENSUS_MAX = 55;
+  var CITIES_MAX = 9;
+
+  function loadStats() {
+    try {
+      var stats = JSON.parse(localStorage.getItem(STATS_KEY) || '{}');
+      return { census: stats.census || [], cities: stats.cities || [] };
+    } catch (e) {
+      return { census: [], cities: [] };
+    }
+  }
+
+  function saveStats(stats) {
+    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  }
+
+  function recordTurn(kind, rowSelector) {
+    var rows = Array.from(document.querySelectorAll(rowSelector));
+    var allEntered = rows.length > 0 && rows.every(function(r) { return r.dataset.entered === '1'; });
+    if (!allEntered) return;
+
+    var stats = loadStats();
+    var values = {};
+    rows.forEach(function(r) {
+      values[r.dataset.ast] = {
+        name: r.querySelector('.civ-name').textContent,
+        value: parseInt(r.querySelector('.census-input').value) || 0
+      };
+      delete r.dataset.entered;
+    });
+    stats[kind].push({ turn: stats[kind].length + 1, values: values });
+    saveStats(stats);
+    updateReportStatus();
+    if (document.getElementById('report').classList.contains('visible')) showReport();
+  }
+
+  function updateReportStatus() {
+    var stats = loadStats();
+    var plural = function(n) { return n + (n === 1 ? ' turn' : ' turns'); };
+    document.getElementById('report-status').textContent =
+      'Recorded: census ' + plural(stats.census.length) + ', cities ' + plural(stats.cities.length) +
+      '. A turn is saved when every civ’s number has been entered and the table is sorted.';
+  }
+
+  function clearStats() {
+    if (!confirm('Clear all recorded census and city stats for this game?')) return;
+    localStorage.removeItem(STATS_KEY);
+    document.querySelectorAll('#active-tbody tr, #cities-tbody tr').forEach(function(r) {
+      delete r.dataset.entered;
+    });
+    updateReportStatus();
+    document.getElementById('report').classList.remove('visible');
+  }
+
+  function showReport() {
+    var stats = loadStats();
+    var select = document.getElementById('report-civ');
+    var previous = select.value;
+
+    // Every civ that appears in any recorded turn, in AST order.
+    var civs = {};
+    stats.census.concat(stats.cities).forEach(function(t) {
+      Object.keys(t.values).forEach(function(ast) { civs[ast] = t.values[ast].name; });
+    });
+    var asts = Object.keys(civs).sort(function(a, b) { return a - b; });
+
+    select.innerHTML = asts.map(function(ast) {
+      return '<option value="' + ast + '">' + civs[ast] + '</option>';
+    }).join('');
+    if (asts.indexOf(previous) !== -1) select.value = previous;
+
+    document.getElementById('report').classList.add('visible');
+    renderChart();
+  }
+
+  function svgEl(tag, attrs, text) {
+    var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+
+  function renderChart() {
+    var svg = document.getElementById('report-chart');
+    var tooltip = document.getElementById('chart-tooltip');
+    var stats = loadStats();
+    var ast = document.getElementById('report-civ').value;
+    svg.innerHTML = '';
+    tooltip.style.display = 'none';
+
+    // Size the drawing to the container so text stays readable on phones.
+    var W = Math.max(300, svg.parentNode.clientWidth || 760);
+    var H = W < 500 ? 280 : 340, L = 48, R = 44, T = 20, B = 48;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var plotW = W - L - R, plotH = H - T - B;
+    var turns = Math.max(stats.census.length, stats.cities.length);
+
+    if (!ast || turns === 0) {
+      svg.appendChild(svgEl('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle', 'class': 'report-empty' },
+        'No turns recorded yet'));
+      return;
+    }
+
+    var civName = document.getElementById('report-civ').selectedOptions[0].textContent;
+    svg.setAttribute('aria-label', civName + ' census and city count by turn');
+
+    var x = function(turn) { return turns === 1 ? L + plotW / 2 : L + (turn - 1) / (turns - 1) * plotW; };
+    var yCensus = function(v) { return T + plotH - Math.min(v, CENSUS_MAX) / CENSUS_MAX * plotH; };
+    var yCities = function(v) { return T + plotH - Math.min(v, CITIES_MAX) / CITIES_MAX * plotH; };
+
+    // Left axis: census, with the gridlines.
+    for (var c = 0; c <= CENSUS_MAX; c += 11) {
+      svg.appendChild(svgEl('line', { x1: L, x2: W - R, y1: yCensus(c), y2: yCensus(c), 'class': 'grid' }));
+      svg.appendChild(svgEl('text', { x: L - 8, y: yCensus(c) + 4, 'text-anchor': 'end' }, c));
+    }
+    // Right axis: cities.
+    for (var n = 0; n <= CITIES_MAX; n++) {
+      svg.appendChild(svgEl('text', { x: W - R + 8, y: yCities(n) + 4, 'text-anchor': 'start' }, n));
+    }
+    svg.appendChild(svgEl('line', { x1: L, x2: L, y1: T, y2: T + plotH, 'class': 'axis' }));
+    svg.appendChild(svgEl('line', { x1: W - R, x2: W - R, y1: T, y2: T + plotH, 'class': 'axis' }));
+    svg.appendChild(svgEl('text', { 'class': 'axis-title', 'text-anchor': 'middle',
+      transform: 'translate(14,' + (T + plotH / 2) + ') rotate(-90)', fill: 'var(--census-line)' }, 'CENSUS'));
+    svg.appendChild(svgEl('text', { 'class': 'axis-title', 'text-anchor': 'middle',
+      transform: 'translate(' + (W - 12) + ',' + (T + plotH / 2) + ') rotate(90)', fill: 'var(--cities-line)' }, 'CITIES'));
+
+    // Bottom axis: turn number. Thin the labels out on long games.
+    var step = Math.ceil(turns / Math.max(4, Math.floor(plotW / 40)));
+    for (var t = 1; t <= turns; t++) {
+      // Always label the last turn, dropping any label that would crowd it.
+      if (t !== turns && ((t - 1) % step !== 0 || turns - t < step)) continue;
+      svg.appendChild(svgEl('text', { x: x(t), y: T + plotH + 20, 'text-anchor': 'middle' }, t));
+    }
+    svg.appendChild(svgEl('text', { x: L + plotW / 2, y: H - 6, 'text-anchor': 'middle', 'class': 'axis-title' }, 'TURN'));
+
+    // One line per measure. A turn the civ wasn't in the game breaks the line.
+    function series(records, y, color, dashed, kind) {
+      var points = records.map(function(rec) {
+        var v = rec.values[ast];
+        return v ? { turn: rec.turn, value: v.value, x: x(rec.turn), y: y(v.value) } : null;
+      });
+      var d = '', pen = false;
+      points.forEach(function(p) {
+        if (!p) { pen = false; return; }
+        d += (pen ? 'L' : 'M') + p.x + ' ' + p.y;
+        pen = true;
+      });
+      if (d) {
+        var attrs = { d: d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' };
+        if (dashed) attrs['stroke-dasharray'] = '6 4';
+        svg.appendChild(svgEl('path', attrs));
+      }
+      points.forEach(function(p) {
+        if (p) svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 4, fill: color,
+          stroke: 'var(--surface)', 'stroke-width': 2, 'class': 'point-' + kind }));
+      });
+      return points;
+    }
+    var censusPts = series(stats.census, yCensus, 'var(--census-line)', false, 'census');
+    var citiesPts = series(stats.cities, yCities, 'var(--cities-line)', true, 'cities');
+
+    // Hover / tap: a crosshair and the values for the nearest turn.
+    var crosshair = svgEl('line', { y1: T, y2: T + plotH, 'class': 'crosshair', visibility: 'hidden' });
+    svg.appendChild(crosshair);
+    var hit = svgEl('rect', { x: L - 10, y: T, width: plotW + 20, height: plotH, fill: 'transparent' });
+    svg.appendChild(hit);
+
+    function pointAt(evt) {
+      var rect = svg.getBoundingClientRect();
+      var px = (evt.clientX - rect.left) / rect.width * W;
+      var turn = turns === 1 ? 1 : Math.round((px - L) / plotW * (turns - 1)) + 1;
+      turn = Math.max(1, Math.min(turns, turn));
+      var cen = censusPts[turn - 1], cit = citiesPts[turn - 1];
+      crosshair.setAttribute('x1', x(turn));
+      crosshair.setAttribute('x2', x(turn));
+      crosshair.setAttribute('visibility', 'visible');
+      tooltip.innerHTML = '<b>' + civName + ' · Turn ' + turn + '</b><br>' +
+        'Census: ' + (cen ? cen.value : '–') + '<br>Cities: ' + (cit ? cit.value : '–');
+      tooltip.style.left = (x(turn) / W * rect.width) + 'px';
+      tooltip.style.top = (T / H * rect.height) + 'px';
+      tooltip.style.display = 'block';
+    }
+    hit.addEventListener('pointermove', pointAt);
+    hit.addEventListener('pointerdown', pointAt);
+    hit.addEventListener('pointerleave', function() {
+      crosshair.setAttribute('visibility', 'hidden');
+      tooltip.style.display = 'none';
+    });
+  }
+
+  window.addEventListener('resize', function() {
+    if (document.getElementById('report').classList.contains('visible')) renderChart();
+  });
 
   function timerHtml() {
     return '<div class="timer-wrap">' +
